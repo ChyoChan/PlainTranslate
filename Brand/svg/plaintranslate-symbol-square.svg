@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"><title id="title">PlainTranslate P/T symbol</title><g transform="translate(-15.36 -19.84) scale(1.12)">
+<!-- SPDX-License-Identifier: GPL-3.0-or-later; Copyright 2026 PlainTranslate contributors -->
+
+<path fill="#000000" fill-rule="evenodd" d="M44 228V52A16 16 0 0 1 60 36H148A64 64 0 0 1 148 164H84V228Z M84 68H172V96H144V132H112V96H84Z"/>
+</g></svg>

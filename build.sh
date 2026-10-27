@@ -32,6 +32,7 @@ cp "$BIN_DIR/PlainTranslate" "$APP/Contents/MacOS/PlainTranslate"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 cp LICENSE "$APP/Contents/Resources/LICENSE.txt"
 cp NOTICE.md "$APP/Contents/Resources/NOTICE.txt"
+cp Resources/Brand/BrandMarkTemplate.png Resources/Brand/BrandMarkTemplate@2x.png "$APP/Contents/Resources/"
 if git rev-parse --verify HEAD >/dev/null 2>&1; then
   COMMIT="$(git rev-parse --short=12 HEAD)"
   if [[ -n "$(git status --porcelain --untracked-files=normal)" ]]; then
@@ -39,7 +40,7 @@ if git rev-parse --verify HEAD >/dev/null 2>&1; then
   fi
   /usr/libexec/PlistBuddy -c "Add :PlainTranslateCommit string $COMMIT" "$APP/Contents/Info.plist"
 fi
-swift -module-cache-path "$ROOT/.build/icon-module-cache" Tools/MakeIcon.swift "$STAGE/AppIcon.iconset"
+swift -module-cache-path "$ROOT/.build/icon-module-cache" Tools/MakeIcon.swift Resources/Brand/AppIcon.png "$STAGE/AppIcon.iconset"
 iconutil -c icns "$STAGE/AppIcon.iconset" -o "$APP/Contents/Resources/AppIcon.icns"
 SIGNING_IDENTITY="${PLAINTRANSLATE_SIGNING_IDENTITY:--}"
 codesign --force --sign "$SIGNING_IDENTITY" --options runtime --timestamp=none "$APP"

@@ -1,0 +1,65 @@
+{
+  "colors": {
+    "primary": {
+      "hex": "#000000",
+      "rgb": [
+        0,
+        0,
+        0
+      ],
+      "cmyk_approximation": [
+        0,
+        0,
+        0,
+        100
+      ]
+    },
+    "ink": {
+      "hex": "#000000",
+      "rgb": [
+        0,
+        0,
+        0
+      ],
+      "cmyk_approximation": [
+        0,
+        0,
+        0,
+        100
+      ]
+    },
+    "paper": {
+      "hex": "#F7F7F7",
+      "rgb": [
+        247,
+        247,
+        247
+      ],
+      "cmyk_approximation": [
+        0,
+        0,
+        0,
+        3
+      ]
+    },
+    "white": {
+      "hex": "#FFFFFF",
+      "rgb": [
+        255,
+        255,
+        255
+      ],
+      "cmyk_approximation": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "contrast": {
+    "white_on_black": 21.0,
+    "black_on_white": 21.0
+  },
+  "print_note": "CMYK values are unprofiled approximations; no Pantone match has been specified or proofed."
+}

@@ -14,7 +14,7 @@ struct PlainTranslateApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra("PlainTranslate", systemImage: "character.bubble") {
+        MenuBarExtra {
             Button(label("Open translator…", "開啟翻譯…")) {
                 TranslationService.shared.open()
             }
@@ -29,6 +29,13 @@ struct PlainTranslateApp: App {
                 NSApplication.shared.terminate(nil)
             }
             .keyboardShortcut("q", modifiers: .command)
+        } label: {
+            Image("BrandMarkTemplate")
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 18, height: 18)
+                .accessibilityLabel("PlainTranslate")
         }
         .commands {
             CommandGroup(replacing: .appSettings) {

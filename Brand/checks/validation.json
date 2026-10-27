@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-27",
+  "direction": "A / P-T negative space",
+  "svg_assets_checked": 25,
+  "native_artwork_validation": "passed",
+  "regression_tests": 30,
+  "source_svg_rasters_filters_live_fonts": "none in logo masters or delivery variants",
+  "guide_pages": 1,
+  "audit_notes": [
+    "Symbol vertical offset compensates the upper bowl mass.",
+    "White symbol is optically thinned. White on the coloured app tile is intentional.",
+    "Stacked lettering has a minimum width of160px; use the small symbol for16-32px."
+  ],
+  "limitations": [
+    "No trademark clearance or physical print proof.",
+    "CMYK values are approximate; no Pantone match specified."
+  ],
+  "contrast_white_on_black": 21.0,
+  "palette": "Black and white",
+  "regression_test_note": "30 application tests passed before this asset-only recolor; no application code changed.",
+  "installed_app_validation": {
+    "version": "0.1.2",
+    "local_changes": true,
+    "dock_regular_policy": true,
+    "strict_codesign": "passed",
+    "icon_and_menu_resources_match_kit": true,
+    "existing_plaintranslate_preferences": "preserved"
+  }
+}

@@ -174,6 +174,12 @@ PlainTranslate 是獨立的 Mac 翻譯 App，不會修改 Vorssaint。
 
 目前安裝包採用本機簽署，尚未經 Apple 公證。Apple／Google 的翻譯模型本身不包含在開源範圍內。
 
+## Brand assets
+
+The P/T mark combines the app's initials using a transparent T inside a P. The
+complete [logo kit and usage guide](Brand/README.md) includes original outlined
+SVG artwork, black/white variants, app icons and web icons under GPL-3.0-or-later.
+
 ## License
 
 [GNU General Public License v3.0 or later](LICENSE). Retain the attribution and

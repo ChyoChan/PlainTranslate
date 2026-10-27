@@ -1,0 +1,56 @@
+{
+  "brand": "PlainTranslate",
+  "tagline": "Carry the meaning across.",
+  "brief": "An independent, open-source native Mac translator. A clear P holds a T in its negative space, identifying PlainTranslate with one compact silhouette.",
+  "adjectives": [
+    "clear",
+    "quiet",
+    "precise",
+    "approachable"
+  ],
+  "criteria": "Recognisable at 16px; works as a one-colour menu icon, in the Dock and on GitHub. No shared cloud key or affiliation with Vorssaint.",
+  "industry": "software",
+  "mockups": [
+    "app-icon",
+    "readme",
+    "website",
+    "favicon-tab",
+    "social",
+    "sticker"
+  ],
+  "nav": [
+    "Features",
+    "Privacy",
+    "Source"
+  ],
+  "brand_color": "#000000",
+  "tile_color": "#000000",
+  "greyscale": false,
+  "final": true,
+  "designer": "PlainTranslate contributors",
+  "round": 2,
+  "concepts": [
+    {
+      "name": "P / T \u2014 Meaning in the space",
+      "symbol": "../masters/plaintranslate-symbol.svg",
+      "lockup": "../masters/plaintranslate-horizontal.svg",
+      "stacked": "../masters/plaintranslate-stacked.svg",
+      "avatar": "../masters/plaintranslate-app-icon.svg",
+      "symbol_on_tile": "../masters/plaintranslate-symbol-reversed.svg",
+      "symbol_on_dark": "../masters/plaintranslate-symbol-reversed.svg",
+      "lockup_on_dark": "../svg/plaintranslate-horizontal-white.svg",
+      "idea": "The P names the app; the transparent T is discovered inside it.",
+      "rationale": [
+        "One stable silhouette for small native surfaces.",
+        "Black and white remain legible without shading.",
+        "Original outlined lettering requires no font files."
+      ]
+    }
+  ],
+  "recommendation": "Approved direction A. Use the black tile in the Dock, the black template in the menu bar and the horizontal lockup for the repository.",
+  "next_steps": [
+    "Use the supplied assets without redrawing the wordmark.",
+    "Keep the transparent T open at small sizes.",
+    "Print and trademark checks remain separate from digital artwork verification."
+  ]
+}

@@ -1,0 +1,36 @@
+
+=== plaintranslate-symbol.svg  (418 bytes)
+viewBox 0 0 256 256 · aspect 1.0 (square)
+colours 1: #000000 · gradients 0 · anchors 17
+margins L44.0 R44.0 T36.0 B28.0 · bbox fill 0.492
+· INFO [off-centre-y] Vertical margins differ (top 36.0, bottom 28.0). Remember the optical centre sits slightly above the geometric centre.
+production-readiness score: 99/100 (heuristic)
+
+=== plaintranslate-symbol-reversed.svg  (441 bytes)
+viewBox 0 0 256 256 · aspect 1.0 (square)
+colours 1: #ffffff · gradients 0 · anchors 17
+margins L45.0 R45.0 T37.0 B29.0 · bbox fill 0.481
+· INFO [off-centre-y] Vertical margins differ (top 37.0, bottom 29.0). Remember the optical centre sits slightly above the geometric centre.
+production-readiness score: 99/100 (heuristic)
+
+=== plaintranslate-symbol-small.svg  (429 bytes)
+viewBox 0 0 256 256 · aspect 1.0 (square)
+colours 1: #000000 · gradients 0 · anchors 17
+margins L44.0 R44.0 T36.0 B28.0 · bbox fill 0.492
+· INFO [off-centre-y] Vertical margins differ (top 36.0, bottom 28.0). Remember the optical centre sits slightly above the geometric centre.
+production-readiness score: 99/100 (heuristic)
+
+=== plaintranslate-app-icon.svg  (532 bytes)
+viewBox 0 0 256 256 · aspect 1.0 (square)
+colours 2: #000000 #ffffff · gradients 0 · anchors 26
+margins L14.0 R14.0 T14.0 B14.0 · bbox fill 0.793
+▲ WARN [white-knockout] 1 white shape(s) are painted on top of coloured shapes. If they are meant as holes, they will show as white blobs on coloured/photo backgrounds and break one-colour versions — make real holes (fill-rule="evenodd" or subtracted paths). Ignore if the white is deliberate (e.g. a symbol on a tile).
+production-readiness score: 92/100 (heuristic)
+
+=== plaintranslate-horizontal.svg  (3115 bytes)
+viewBox 0 0 1288 256 · aspect 5.031 (extra-wide)
+colours 1: #000000 · gradients 0 · anchors 183
+margins L55.0 R32.0 T47.2 B47.5 · bbox fill 0.587
+· INFO [complexity] 183 anchor points (library median 75.0, p75 155.0). Check every point earns its place.
+· INFO [extra-wide] Extra-wide lockup (>4.5:1) shrinks badly; provide a stacked lockup and a standalone symbol.
+production-readiness score: 98/100 (heuristic)
