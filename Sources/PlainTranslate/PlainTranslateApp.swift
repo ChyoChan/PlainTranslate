@@ -22,7 +22,7 @@ struct PlainTranslateApp: App {
                 TranslationService.shared.useCopiedText(presentation: .compact)
             }
             Divider()
-            SettingsLink { Text(label("Settings…", "設定…")) }
+            Button(label("Settings…", "設定…")) { SettingsNavigation.shared.show() }
                 .keyboardShortcut(",", modifiers: .command)
             Divider()
             Button(label("Quit PlainTranslate", "結束 PlainTranslate")) {
@@ -30,8 +30,11 @@ struct PlainTranslateApp: App {
             }
             .keyboardShortcut("q", modifiers: .command)
         }
-        Settings {
-            SettingsView()
+        .commands {
+            CommandGroup(replacing: .appSettings) {
+                Button(label("Settings…", "設定…")) { SettingsNavigation.shared.show() }
+                    .keyboardShortcut(",", modifiers: .command)
+            }
         }
     }
 

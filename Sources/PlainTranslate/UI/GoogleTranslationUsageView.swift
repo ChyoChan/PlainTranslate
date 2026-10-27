@@ -15,7 +15,7 @@ struct GoogleTranslationUsageView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(text.googleUsageTitle).font(.subheadline.weight(.medium))
             Text("\(usage.month) · \(text.hongKongTime)")
-                .font(.caption).foregroundStyle(.secondary)
+                .font(.caption).foregroundStyle(.primary)
             HStack {
                 Text(text.googleSubmittedCharacters)
                 Spacer()
@@ -30,7 +30,7 @@ struct GoogleTranslationUsageView: View {
             Toggle(text.googleUsageReminder, isOn: $reminderEnabled)
                 .toggleStyle(.switch)
                 .accessibilityIdentifier("googleUsageReminderToggle")
-            Text(text.googleUsageReminderCaption).font(.caption).foregroundStyle(.secondary)
+            Text(text.googleUsageReminderCaption).font(.caption).foregroundStyle(.primary)
                 .fixedSize(horizontal: false, vertical: true)
             if usage.characters >= GoogleTranslationUsageReminder.thresholdCharacters {
                 Label {
@@ -43,7 +43,7 @@ struct GoogleTranslationUsageView: View {
                     .accessibilityIdentifier("googleUsageThresholdWarning")
             }
             Link(text.googleUsageConsole, destination: URL(string: "https://console.cloud.google.com/apis/api/translate.googleapis.com/metrics")!)
-            Text(text.googleUsageCaption).font(.caption).foregroundStyle(.secondary)
+            Text(text.googleUsageCaption).font(.caption).foregroundStyle(.primary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .onAppear { refresh() }

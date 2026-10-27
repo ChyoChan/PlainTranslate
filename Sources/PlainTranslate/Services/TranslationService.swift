@@ -17,6 +17,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     @Published var target = TranslationLanguageDefaults.target
     @Published private(set) var output = ""
     @Published private(set) var message: String?
+    @Published private(set) var googleFailure: GoogleTranslationError?
     @Published private(set) var busy = false
     @Published private(set) var copied = false
     @Published private(set) var request: TranslationRequest?
@@ -33,6 +34,10 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         rawValue: UserDefaults.standard.string(forKey: DefaultsKey.translationEngine) ?? "") ?? .apple
     var privacyNotice: String { engine == .apple ? strings.privacy : strings.googlePrivacy }
     var engineName: String { engine == .apple ? strings.localEngine : strings.googleEngine }
+    var offersGoogleKeySetup: Bool {
+        guard let googleFailure else { return false }
+        return [.missingKey, .invalidKey, .denied].contains(googleFailure)
+    }
     private var cloudTask: Task<Void, Never>?
     private var speechSynthesizer: AVSpeechSynthesizer?
     private let speechVoices: () -> [AVSpeechSynthesisVoice]
@@ -206,8 +211,6 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
             for button in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
                 created.standardWindowButton(button)?.isHidden = true
             }
-            created.level = .floating
-            created.hidesOnDeactivate = false
             created.isReleasedWhenClosed = false
             created.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
             created.delegate = self
@@ -215,6 +218,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
             panel = created
         }
         guard let panel else { return }
+        TranslationWindowPolicy.configure(panel, for: mode)
         panel.title = "PlainTranslate"
         panel.contentMinSize = mode.minimumSize
         panel.contentMaxSize = NSSize(width: mode == .compact ? TranslationCompactLayout.widthRange.upperBound : .greatestFiniteMagnitude,
@@ -236,7 +240,9 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
             let y = min(max(preferredY, frame.minY), max(frame.minY, frame.maxY - panel.frame.height))
             panel.setFrameOrigin(NSPoint(x: x, y: y))
         }
+        if mode == .editor { NSApp.activate(ignoringOtherApps: true) }
         panel.makeKeyAndOrderFront(nil)
+        if mode == .editor { panel.makeMain() }
         updateDismissMonitors()
     }
 
@@ -289,6 +295,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         input = ""
         output = ""
         message = nil
+        googleFailure = nil
         copied = false
         copyToken = UUID()
         panel?.orderOut(nil)
@@ -298,6 +305,12 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     }
 
     func windowWillClose(_ notification: Notification) { close() }
+
+    func hideForSettings() {
+        stopSpeech()
+        removeDismissMonitors()
+        panel?.orderOut(nil)
+    }
 
     private func updateDismissMonitors() {
         removeDismissMonitors()
@@ -360,6 +373,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     func useCopiedText(requiringChangeAfter baseline: Int? = nil, requiresFreshCopy: Bool = false,
                        presentation mode: TranslationPresentation? = nil) {
         guard !readInFlight else { return }
+        googleFailure = nil
         stopSpeech()
         cloudTask?.cancel()
         cloudTask = nil
@@ -397,6 +411,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     }
 
     func inputDidChange() {
+        googleFailure = nil
         stopSpeech()
         cloudTask?.cancel()
         cloudTask = nil
@@ -446,6 +461,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
 
     func translate() {
         stopSpeech()
+        googleFailure = nil
         do { _ = try TranslationTextPlan.validate(input) }
         catch { message = inputMessage(error); return }
         cloudTask?.cancel()
@@ -480,6 +496,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
 
     func cancel() {
         stopSpeech()
+        googleFailure = nil
         cloudTask?.cancel()
         cloudTask = nil
         generation.advance()
@@ -490,6 +507,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
 
     func finish(_ id: UUID, result: Result<String, Error>) {
         guard request?.id == id else { return }
+        googleFailure = nil
         cloudTask = nil
         busy = false
         switch result {
@@ -498,7 +516,10 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
             if error is CancellationError { message = nil }
             else if error is TranslationUnsupportedPair { message = strings.unsupported }
             else if error is TranslationUnknownSource { message = strings.unknownSource }
-            else if let error = error as? GoogleTranslationError { message = strings.googleError(error) }
+            else if let error = error as? GoogleTranslationError {
+                googleFailure = error
+                message = strings.googleError(error)
+            }
             else if error is TranslationKeychain.Failure { message = strings.keychainFailed }
             else if error is TranslationInputError { message = inputMessage(error) }
             else { message = strings.failed }
@@ -628,8 +649,19 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
 struct TranslationUnsupportedPair: Error {}
 struct TranslationUnknownSource: Error {}
 
-private final class TranslationPanel: NSPanel {
+enum TranslationWindowPolicy {
+    static func configure(_ panel: NSPanel, for presentation: TranslationPresentation) {
+        let compact = presentation == .compact
+        panel.isFloatingPanel = compact
+        panel.level = compact ? .floating : .normal
+        panel.hidesOnDeactivate = false
+        // Keep the nonactivating style fixed; changing it on a live NSPanel can
+        // leave its WindowServer activation state out of sync with AppKit.
+    }
+}
+
+final class TranslationPanel: NSPanel {
     override var canBecomeKey: Bool { true }
-    override var canBecomeMain: Bool { false }
+    override var canBecomeMain: Bool { !isFloatingPanel }
     override func cancelOperation(_ sender: Any?) { close() }
 }

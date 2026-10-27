@@ -10,15 +10,18 @@ struct SettingsView: View {
     @ObservedObject private var model = TranslationService.shared
     @ObservedObject private var credentials = TranslationCredentials.shared
     @ObservedObject private var permissions = Permissions.shared
+    @ObservedObject private var navigation = SettingsNavigation.shared
     @AppStorage(DefaultsKey.translationDoubleCopyEnabled) private var doubleCopy = false
     @AppStorage(DefaultsKey.translationPDFLineBreakCleanup) private var pdfCleanup = true
     @AppStorage(DefaultsKey.translationPopupWidth) private var popupWidth = TranslationCompactLayout.defaultWidth
     @AppStorage(DefaultsKey.translationPopupFontSize) private var popupFontSize = TranslationCompactLayout.defaultFontSize
     @AppStorage(DefaultsKey.translationChineseVoice) private var chineseVoice = TranslationSpeechLanguage.defaultChineseVoice
     @State private var keyDraft = ""
+    @FocusState private var keyFocused: Bool
+    private static let googleCredentialsID = "googleCredentials"
     private var text: TranslationStrings { TranslationStrings(language: l10n.language) }
 
-    var body: some View {
+    private var settingsForm: some View {
         Form {
             Section(label("General", "一般")) {
                 Picker(label("Interface language", "介面語言"), selection: Binding(
@@ -37,6 +40,8 @@ struct SettingsView: View {
                 caption(model.privacyNotice)
                 if model.engine == .google {
                     credentialsSection
+                        .id(Self.googleCredentialsID)
+                    GoogleTranslationUsageView()
                 }
             }
             Section(label("Shortcut", "快捷鍵")) {
@@ -109,14 +114,9 @@ struct SettingsView: View {
                 caption(text.speechCaption)
                 TranslationSpeechSettings(model: model)
             }
-            if model.engine == .google {
-                Section(text.googleUsageTitle) {
-                    GoogleTranslationUsageView()
-                }
-            }
             Section(label("About PlainTranslate", "關於 PlainTranslate")) {
                 LabeledContent(label("Version", "版本"), value:
-                    Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0")
+                    Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.1")
                 caption(label(
                     "Independent, open-source translation app. Translation components adapted from Vorssaint under GPL-3.0-or-later.",
                     "獨立開源翻譯 App。翻譯元件改編自 Vorssaint，採用 GPL-3.0-or-later 授權。"))
@@ -128,6 +128,19 @@ struct SettingsView: View {
                     Link(label("Original project", "原始專案"), destination: URL(string: "https://github.com/vorssaint/vorssaint-utils")!)
                 }
             }
+        }
+    }
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            settingsForm
+                .onAppear { focusGoogleCredentials(using: proxy) }
+                .onChange(of: navigation.focusGoogleCredentials) { _, _ in
+                    focusGoogleCredentials(using: proxy)
+                }
+                .onChange(of: credentials.busy) { _, busy in
+                    if !busy { focusGoogleCredentials(using: proxy) }
+                }
         }
         .formStyle(.grouped)
         .toggleStyle(.switch)
@@ -141,7 +154,11 @@ struct SettingsView: View {
             permissions.refresh()
             model.syncWithPreferences()
         }
-        .onDisappear { keyDraft = "" }
+        .onDisappear {
+            keyDraft = ""
+            keyFocused = false
+            navigation.focusGoogleCredentials = false
+        }
         .onChange(of: model.engine) { _, _ in keyDraft = "" }
     }
 
@@ -153,6 +170,7 @@ struct SettingsView: View {
                 .privacySensitive()
                 .accessibilityLabel(text.apiKey)
                 .disabled(credentials.busy)
+                .focused($keyFocused)
             HStack {
                 Button(text.saveKey) {
                     let draft = keyDraft
@@ -183,8 +201,20 @@ struct SettingsView: View {
         }
     }
 
+    private func focusGoogleCredentials(using proxy: ScrollViewProxy) {
+        guard navigation.focusGoogleCredentials, model.engine == .google else { return }
+        proxy.scrollTo(Self.googleCredentialsID, anchor: .top)
+        guard !credentials.busy else { return }
+        DispatchQueue.main.async {
+            guard navigation.focusGoogleCredentials, !credentials.busy else { return }
+            proxy.scrollTo(Self.googleCredentialsID, anchor: .top)
+            keyFocused = true
+            navigation.focusGoogleCredentials = false
+        }
+    }
+
     private func caption(_ value: String) -> some View {
-        Text(value).font(.caption).foregroundStyle(.secondary)
+        Text(value).font(.caption).foregroundStyle(.primary)
             .fixedSize(horizontal: false, vertical: true)
     }
 

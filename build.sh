@@ -26,6 +26,9 @@ cp LICENSE "$APP/Contents/Resources/LICENSE.txt"
 cp NOTICE.md "$APP/Contents/Resources/NOTICE.txt"
 if git rev-parse --verify HEAD >/dev/null 2>&1; then
   COMMIT="$(git rev-parse --short=12 HEAD)"
+  if [[ -n "$(git status --porcelain --untracked-files=normal)" ]]; then
+    COMMIT+="-dirty"
+  fi
   /usr/libexec/PlistBuddy -c "Add :PlainTranslateCommit string $COMMIT" "$APP/Contents/Info.plist"
 fi
 swift -module-cache-path "$ROOT/.build/icon-module-cache" Tools/MakeIcon.swift "$STAGE/AppIcon.iconset"

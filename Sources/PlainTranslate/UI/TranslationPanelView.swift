@@ -109,7 +109,7 @@ struct TranslationPanelView: View {
                     .font(.headline)
                 enginePicker
                 Spacer(minLength: 8)
-                SettingsLink {
+                Button { SettingsNavigation.shared.show() } label: {
                     Image(systemName: "gearshape")
                 }
                 .help(l10n.language == .en ? "Settings" : "設定")
@@ -140,7 +140,7 @@ struct TranslationPanelView: View {
             HSplitView {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text(text.source).font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
+                        Text(text.source).font(.subheadline.weight(.medium)).foregroundStyle(.primary)
                             .accessibilityAddTraits(.isHeader)
                         Spacer(minLength: 0)
                         speechButton(.original).labelStyle(.iconOnly)
@@ -180,7 +180,7 @@ struct TranslationPanelView: View {
                 .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text(text.result).font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
+                        Text(text.result).font(.subheadline.weight(.medium)).foregroundStyle(.primary)
                             .accessibilityAddTraits(.isHeader)
                         Spacer(minLength: 0)
                         speechButton(.translation).labelStyle(.iconOnly)
@@ -196,7 +196,7 @@ struct TranslationPanelView: View {
             }
             Divider()
             Text(model.privacyNotice)
-                .font(.caption).foregroundStyle(.secondary)
+                .font(.caption).foregroundStyle(.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 16).padding(.vertical, 10)
         }
@@ -242,14 +242,14 @@ struct TranslationPanelView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     if compact, !model.input.isEmpty {
-                        Text(text.source).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                        Text(text.source).font(.caption.weight(.semibold)).foregroundStyle(.primary)
                             .accessibilityAddTraits(.isHeader)
                         Text(model.input)
                             .font(.system(size: TranslationCompactLayout.fontSize(popupFontSize)))
                             .textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         Divider().id(Self.resultAnchor)
-                        Text(text.result).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                        Text(text.result).font(.caption.weight(.semibold)).foregroundStyle(.primary)
                             .accessibilityAddTraits(.isHeader)
                     }
                     if model.busy {
@@ -259,16 +259,36 @@ struct TranslationPanelView: View {
                         }
                         .accessibilityElement(children: .combine)
                     } else {
-                        Text(model.output.isEmpty ? (model.message ?? text.waiting) : model.output)
-                            .font(.system(size: compact ? TranslationCompactLayout.fontSize(popupFontSize) : 18))
-                            .foregroundStyle(model.output.isEmpty ? .secondary : .primary)
-                            .textSelection(.enabled)
+                        if model.output.isEmpty, let message = model.message {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Label(text.translationUnavailable, systemImage: "exclamationmark.triangle")
+                                    .font(.headline)
+                                Text(message)
+                                    .font(.system(size: compact ? TranslationCompactLayout.fontSize(popupFontSize) : 18))
+                                    .textSelection(.enabled)
+                                if model.offersGoogleKeySetup {
+                                    Button { SettingsNavigation.shared.requestGoogleCredentials() } label: {
+                                        Label(text.configureGoogleKey, systemImage: "key")
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                    .accessibilityIdentifier("configureGoogleKey")
+                                }
+                            }
+                            .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityIdentifier("translationError")
+                        } else {
+                            Text(model.output.isEmpty ? text.waiting : model.output)
+                                .font(.system(size: compact ? TranslationCompactLayout.fontSize(popupFontSize) : 18))
+                                .foregroundStyle(model.output.isEmpty ? .secondary : .primary)
+                                .textSelection(.enabled)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                         if !model.output.isEmpty, let message = model.message {
-                            Text(message).font(.callout).foregroundStyle(.secondary)
+                            Text(message).font(.callout).foregroundStyle(.primary)
                         }
                         if let message = model.speechMessage {
-                            Text(message).font(.callout).foregroundStyle(.secondary)
+                            Text(message).font(.callout).foregroundStyle(.primary)
                                 .accessibilityIdentifier("translationSpeechMessage")
                         }
                     }

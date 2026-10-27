@@ -55,7 +55,7 @@ struct TranslationSpeechSettings: View {
                 .labelsHidden()
                 .accessibilityLabel(text.speechRate)
                 .accessibilityIdentifier("translationSpeechRate")
-                Text(rateDescription).font(.caption).foregroundStyle(.secondary).frame(width: 50)
+                Text(rateDescription).font(.caption).foregroundStyle(.primary).frame(width: 50)
             }
             HStack {
                 Button(text.speechResetRate) { model.setSpeechRate(TranslationSpeechPreferences.defaultRate) }
@@ -67,10 +67,10 @@ struct TranslationSpeechSettings: View {
                 }
             }
             .controlSize(.small)
-            Text(text.speechDownloadCaption).font(.caption).foregroundStyle(.secondary)
+            Text(text.speechDownloadCaption).font(.caption).foregroundStyle(.primary)
                 .fixedSize(horizontal: false, vertical: true)
             if let message = model.speechMessage {
-                Text(message).font(.caption).foregroundStyle(.secondary)
+                Text(message).font(.caption).foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

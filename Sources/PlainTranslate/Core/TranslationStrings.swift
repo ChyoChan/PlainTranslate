@@ -138,6 +138,8 @@ struct TranslationStrings {
     var keySaved: String { t("Key saved in macOS Keychain. It will be verified on your first translation.", "金鑰已存入 macOS 鑰匙圈；有效性會在首次翻譯時驗證。", "密钥已存入 macOS 钥匙串；有效性会在首次翻译时验证。") }
     var keyPresent: String { t("A key is stored in macOS Keychain.", "macOS 鑰匙圈已有儲存的金鑰。", "macOS 钥匙串已有保存的密钥。") }
     var keyMissing: String { t("Save your Google API key in Settings before translating with Google.", "使用 Google 前，請先到「設定」儲存你自己的 API Key。", "使用 Google 前，请先到“设置”保存你自己的 API Key。") }
+    var configureGoogleKey: String { t("Set up Google API key", "設定 Google 金鑰", "设置 Google 密钥") }
+    var translationUnavailable: String { t("Unable to translate", "無法翻譯", "无法翻译") }
     var keyRemoved: String { t("Key removed from macOS Keychain.", "已從 macOS 鑰匙圈移除金鑰。", "已从 macOS 钥匙串移除密钥。") }
     var keyInvalid: String { t("Check the API key. It must not contain spaces or other non-key characters.", "請檢查 API Key，不應包含空格或其他非金鑰字元。", "请检查 API Key，不应包含空格或其他非密钥字符。") }
     var keychainFailed: String { t("Could not access macOS Keychain. Unlock it or allow access, then try again.", "無法存取 macOS 鑰匙圈，請解鎖或允許存取後重試。", "无法访问 macOS 钥匙串，请解锁或允许访问后重试。") }
