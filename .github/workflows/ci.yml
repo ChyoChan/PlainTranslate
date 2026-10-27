@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Unit tests (no credentials or live translation requests)
-        run: swift test
+        run: ./build.sh --test
       - name: Build standalone app
         run: ./build.sh
       - name: Archive app with executable permissions

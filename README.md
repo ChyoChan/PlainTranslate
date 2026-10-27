@@ -46,6 +46,10 @@ Read [PRIVACY.md](PRIVACY.md) for engine-specific data handling and permissions.
 You need a Mac with macOS 15+, Xcode 16+ (including the macOS 15 SDK), and the
 selected Xcode command-line tools. There are no third-party package dependencies.
 
+The build script compiles and links with the selected Xcode's macOS SDK. Use
+Xcode 26 or later for the modern native controls on macOS 26 or later; the app's
+minimum system requirement remains macOS 15.
+
 ```sh
 git clone https://github.com/ChyoChan/PlainTranslate.git
 cd PlainTranslate

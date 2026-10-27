@@ -5,16 +5,24 @@ set -euo pipefail
 ROOT="${0:A:h}"
 cd "$ROOT"
 INSTALL=false
+TEST=false
 [[ $# -le 1 ]] || { print -u2 'Pass only one option.'; exit 2; }
 case "${1:-}" in
   "") ;;
   --install) INSTALL=true ;;
-  --test) exec swift test ;;
+  --test) TEST=true ;;
   *) print -u2 'Usage: ./build.sh [--test | --install]'; exit 2 ;;
 esac
 
-swift build -c release --product PlainTranslate
-BIN_DIR="$(swift build -c release --show-bin-path)"
+MACOS_SDK_PATH="$(xcrun --sdk macosx --show-sdk-path)"
+MACOS_SDK_VERSION="$(xcrun --sdk macosx --show-sdk-version)"
+APP_MINIMUM_MACOS="$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' Resources/Info.plist)"
+# SwiftPM can stamp the deployment target as the SDK, enabling legacy controls.
+SDK_FLAGS=(--sdk "$MACOS_SDK_PATH" -Xlinker -platform_version -Xlinker macos -Xlinker "$APP_MINIMUM_MACOS" -Xlinker "$MACOS_SDK_VERSION")
+if $TEST; then exec swift test "${SDK_FLAGS[@]}"; fi
+
+swift build "${SDK_FLAGS[@]}" -c release --product PlainTranslate
+BIN_DIR="$(swift build "${SDK_FLAGS[@]}" -c release --show-bin-path)"
 mkdir -p "$ROOT/build"
 STAGE="$(mktemp -d "$ROOT/build/.stage.XXXXXX")"
 trap 'rm -rf -- "$STAGE"' EXIT

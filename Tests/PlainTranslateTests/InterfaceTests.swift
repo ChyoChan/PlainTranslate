@@ -48,10 +48,14 @@ final class InterfaceTests: XCTestCase {
     @MainActor
     private func render<Content: View>(_ content: Content, size: NSSize,
                                       name: String, directory: String?) throws {
+        let previousAppearance = NSApp.appearance
+        NSApp.appearance = NSAppearance(named: name.hasSuffix("dark") ? .darkAqua : .aqua)
+        defer { NSApp.appearance = previousAppearance }
         let host = NSHostingView(rootView: content)
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),
                               styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
+        window.appearance = NSApp.appearance
         window.contentView = host
         host.setFrameSize(size)
         host.layoutSubtreeIfNeeded()
