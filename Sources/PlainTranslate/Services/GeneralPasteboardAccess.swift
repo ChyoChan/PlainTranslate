@@ -34,20 +34,6 @@ final class GeneralPasteboardAccess {
         }
     }
 
-    func async(_ work: @escaping () -> Void) {
-        queue.async(execute: work)
-    }
-
-    /// Runs `work` on the lane and hands its result to `completion` on the
-    /// main queue. The caller returns immediately: a wedged lane delays the
-    /// completion, it never blocks whoever asked.
-    func async<T>(_ work: @escaping () -> T, then completion: @escaping (T) -> Void) {
-        queue.async {
-            let result = work()
-            DispatchQueue.main.async { completion(result) }
-        }
-    }
-
     /// A deadline limits result delivery and prevents expired queued work
     /// from starting. It cannot interrupt an AppKit call already in progress.
     /// `didFinish` runs on main only when the actual queue operation ends,

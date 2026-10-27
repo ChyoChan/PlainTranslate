@@ -26,9 +26,6 @@ enum AssistiveKeyboard {
             .first?.processIdentifier
     }
 
-    /// Also used once at startup to pay the first AppKit lookup before input.
-    static var isRunning: Bool { currentPID() != nil }
-
     private static func onScreenWindows() -> [[String: Any]]? {
         CGWindowListCopyWindowInfo(
             [.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID

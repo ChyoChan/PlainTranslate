@@ -179,7 +179,6 @@ struct TranslationStrings {
     var unsupported: String { t("Apple does not support this language pair on this Mac. Choose another language.", "這部 Mac 的 Apple 翻譯不支援此語言組合，請選擇其他語言。", "这台 Mac 的 Apple 翻译不支持此语言组合，请选择其他语言。") }
     var unknownSource: String { t("Choose the source language and try again. Very short text can be ambiguous.", "請選擇原文語言後重試；太短的文字可能無法自動辨識。", "请选择原文语言后重试；太短的文字可能无法自动识别。") }
     var failed: String { t("Translation failed. Check the selected languages and try again. Language downloads may need a network connection.", "翻譯未完成，請檢查所選語言後重試。下載語言包可能需要網絡連線。", "翻译未完成，请检查所选语言后重试。下载语言包可能需要联网。") }
-    var osRequired: String { t("Apple Translation requires macOS 15 or later.", "Apple 翻譯需要 macOS 15 或以上。", "Apple 翻译需要 macOS 15 或以上。") }
     var permission: String { t("Allow Accessibility to detect double ⌘C in other apps. You can still paste text here without it.", "請允許輔助使用，以偵測其他 App 的兩次 ⌘C；未授權時仍可在此貼上文字翻譯。", "请允许辅助功能，以检测其他 App 的两次 ⌘C；未授权时仍可在此粘贴文字翻译。") }
     var waiting: String { t("Translation appears here.", "譯文會顯示於此。", "译文会显示于此。") }
     var from: String { t("Source language", "原文語言", "原文语言") }

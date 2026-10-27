@@ -116,7 +116,7 @@ struct SettingsView: View {
             }
             Section(label("About PlainTranslate", "關於 PlainTranslate")) {
                 LabeledContent(label("Version", "版本"), value:
-                    Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.1")
+                    Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.2")
                 caption(label(
                     "Independent, open-source translation app. Translation components adapted from Vorssaint under GPL-3.0-or-later.",
                     "獨立開源翻譯 App。翻譯元件改編自 Vorssaint，採用 GPL-3.0-or-later 授權。"))

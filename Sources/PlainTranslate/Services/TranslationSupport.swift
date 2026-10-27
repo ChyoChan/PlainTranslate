@@ -3,7 +3,7 @@
 
 import Foundation
 
-enum TranslationEngine: String, CaseIterable {
+enum TranslationEngine: String {
     case apple, google
 }
 

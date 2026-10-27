@@ -21,7 +21,6 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     @Published private(set) var busy = false
     @Published private(set) var copied = false
     @Published private(set) var request: TranslationRequest?
-    @Published private(set) var listening = false
     @Published private(set) var presentation: TranslationPresentation = .editor
     @Published private(set) var speakingPart: TranslationSpeechPart?
     @Published private(set) var speechMessage: String?
@@ -33,7 +32,6 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     @Published private(set) var engine = TranslationEngine(
         rawValue: UserDefaults.standard.string(forKey: DefaultsKey.translationEngine) ?? "") ?? .apple
     var privacyNotice: String { engine == .apple ? strings.privacy : strings.googlePrivacy }
-    var engineName: String { engine == .apple ? strings.localEngine : strings.googleEngine }
     var offersGoogleKeySetup: Bool {
         guard let googleFailure else { return false }
         return [.missingKey, .invalidKey, .denied].contains(googleFailure)
@@ -105,13 +103,11 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         }
         applyPopupAppearance()
         checkGoogleUsageReminder()
-        let supported: Bool
-        if #available(macOS 15.0, *) { supported = true } else { supported = false }
-        guard enabled, supported else {
+        guard enabled else {
             stopListening()
             // Unrelated preference writes must not close the manually opened
             // editor when the double-copy shortcut was already disabled.
-            if !supported || wasEnabled == true { close() }
+            if wasEnabled == true { close() }
             return
         }
         guard AXIsProcessTrusted() else { stopListening(); return }
@@ -124,7 +120,6 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
             self?.observe(event)
             return event
         }
-        listening = globalMonitor != nil
     }
 
     func checkGoogleUsageReminder(at date: Date = Date()) {
@@ -159,7 +154,6 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         globalMonitor = nil
         localMonitor = nil
         detector = TranslationDoubleCopyDetector()
-        listening = false
     }
 
     private func observe(_ event: NSEvent) {
@@ -193,7 +187,6 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     }
 
     func open(_ mode: TranslationPresentation = .editor) {
-        guard #available(macOS 15.0, *) else { return }
         let needsResize = panel == nil || presentation != mode
         presentation = mode
         var preferredSize = mode.preferredSize

@@ -36,17 +36,8 @@ enum AppPreferences {
     }
 }
 
-enum AppLanguage: String, CaseIterable, Identifiable {
+enum AppLanguage: String {
     case en = "en", zhHK = "zh-HK", zhTW = "zh-TW", zhHans = "zh-Hans"
-    var id: String { rawValue }
-    var title: String {
-        switch self {
-        case .en: return "English"
-        case .zhHK: return "繁體中文（香港）"
-        case .zhTW: return "繁體中文（台灣）"
-        case .zhHans: return "简体中文"
-        }
-    }
     static var system: AppLanguage {
         guard let preferred = Locale.preferredLanguages.first else { return .en }
         // The first release offers English and Traditional Chinese interface copy.

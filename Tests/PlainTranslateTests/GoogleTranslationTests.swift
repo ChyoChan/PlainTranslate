@@ -126,4 +126,16 @@ final class GoogleTranslationTests: XCTestCase {
         catch { XCTAssertEqual(error as? GoogleTranslationError, .network) }
         XCTAssertEqual(count, 1)
     }
+
+    func testTransportCancellationCountsOneAttemptWithoutRetry() async {
+        var calls = 0, submissions = 0
+        let client = GoogleTranslationClient(recordUsage: { _ in submissions += 1 }) { _ in
+            calls += 1
+            throw URLError(.cancelled)
+        }
+        do { _ = try await client.translate(request, key: fakeKey); XCTFail("Cancelled transport returned output") }
+        catch { XCTAssertTrue(error is CancellationError) }
+        XCTAssertEqual(calls, 1)
+        XCTAssertEqual(submissions, 1)
+    }
 }

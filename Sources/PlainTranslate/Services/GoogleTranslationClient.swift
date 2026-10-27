@@ -44,16 +44,11 @@ final class GoogleTranslationClient {
             let session = URLSession(configuration: configuration, delegate: NoRedirects(), delegateQueue: nil)
             self.session = session
             self.transport = { request in
-                do {
-                    let (data, response) = try await session.data(for: request)
-                    guard let response = response as? HTTPURLResponse else {
-                        throw GoogleTranslationError.invalidResponse
-                    }
-                    return (data, response)
-                } catch let error as URLError {
-                    if error.code == .cancelled { throw CancellationError() }
-                    throw GoogleTranslationError.network
+                let (data, response) = try await session.data(for: request)
+                guard let response = response as? HTTPURLResponse else {
+                    throw GoogleTranslationError.invalidResponse
                 }
+                return (data, response)
             }
         }
     }
