@@ -85,6 +85,8 @@ struct TranslationPanelView: View {
             }
             languagePicker(text.to, selection: targetSelection, detectsLanguage: false)
             resultText(compact: true)
+                .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(nsColor: .separatorColor)))
             if model.busy || (model.output.isEmpty && !model.input.isEmpty) {
                 Button(model.busy ? text.cancel : text.translate) {
                     if model.busy { model.cancel() }
@@ -224,9 +226,9 @@ struct TranslationPanelView: View {
     private func resultText(compact: Bool) -> some View {
         ScrollViewReader { proxy in
             ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: compact ? 0 : 12) {
                     if compact, !model.input.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 8) {
                             Text(text.source).font(.caption.weight(.semibold)).foregroundStyle(.primary)
                                 .accessibilityAddTraits(.isHeader)
                             Text(model.input)
@@ -236,10 +238,9 @@ struct TranslationPanelView: View {
                             languageActions(.original)
                         }
                         .padding(12)
-                        .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
-                        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color(nsColor: .separatorColor)))
+                        Divider().id(Self.resultAnchor)
                     }
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: compact ? 8 : 12) {
                         if compact, !model.input.isEmpty {
                             Text(text.result).font(.caption.weight(.semibold)).foregroundStyle(.primary)
                                 .accessibilityAddTraits(.isHeader)
@@ -287,17 +288,6 @@ struct TranslationPanelView: View {
                         if compact { languageActions(.translation) }
                     }
                     .padding(compact ? 12 : 0)
-                    .background {
-                        if compact {
-                            RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: .textBackgroundColor))
-                        }
-                    }
-                    .overlay {
-                        if compact {
-                            RoundedRectangle(cornerRadius: 6).strokeBorder(Color(nsColor: .separatorColor))
-                        }
-                    }
-                    .id(Self.resultAnchor)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background {

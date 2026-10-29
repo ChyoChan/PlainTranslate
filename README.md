@@ -32,9 +32,10 @@ Native editor and compact popup, shown with non-sensitive sample text:
   source and target. The arrow menu keeps all supported choices available.
   Selecting a visible tab moves the underline without reordering the buttons;
   their positions are preserved between launches.
-- Compact popup with original above translation, a read-aloud button at the
-  bottom left and a copy button at the bottom right of each text box, adjustable
-  width and text size, and outside-click dismissal.
+- Compact popup in one frame, with original above translation and a thin
+  separator between them. Each section has read-aloud at the bottom left and
+  copy at the bottom right, with adjustable width and text size and outside-click
+  dismissal.
 - Optional double **⌘C** within 0.7 seconds to translate selected copied text.
   Off by default so it does not compete with Vorssaint or another translator.
 - Optional custom shortcut (default **⌃⌥T**): record your own combination in
