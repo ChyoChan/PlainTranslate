@@ -1,50 +1,63 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 PlainTranslate contributors
 
-import AppKit
 import SwiftUI
 
-struct TranslationEngineControl: NSViewRepresentable {
+struct TranslationEngineControl: View {
     @Binding var selection: TranslationEngine
     let label: String
     let appleHelp: String
     let googleHelp: String
-    private static let engines: [TranslationEngine] = [.apple, .google]
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isEnabled) private var isEnabled
 
-    func makeCoordinator() -> Coordinator { Coordinator(self) }
-
-    func makeNSView(context: Context) -> NSSegmentedControl {
-        let control = NSSegmentedControl(labels: ["Apple", "Google"], trackingMode: .selectOne,
-                                         target: context.coordinator, action: #selector(Coordinator.choose(_:)))
-        control.segmentStyle = .rounded
-        control.controlSize = .regular
-        for (index, symbol) in ["cpu", "cloud"].enumerated() {
-            control.setImage(NSImage(systemSymbolName: symbol, accessibilityDescription: nil), forSegment: index)
-            control.setImageScaling(.scaleProportionallyDown, forSegment: index)
-            control.setWidth(90, forSegment: index)
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color.accentColor)
+                    .frame(width: geometry.size.width / 2)
+                    .offset(x: selection == .google ? geometry.size.width / 2 : 0)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: selection)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                HStack(spacing: 0) {
+                    engineButton(.apple, title: "Apple", symbol: "cpu", help: appleHelp)
+                    engineButton(.google, title: "Google", symbol: "cloud", help: googleHelp)
+                }
+            }
+            .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
         }
-        control.setAccessibilityIdentifier("translationEnginePicker")
-        updateNSView(control, context: context)
-        return control
+        .opacity(isEnabled ? 1 : 0.45)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(label)
+        .accessibilityIdentifier("translationEnginePicker")
+        .onMoveCommand { direction in
+            switch direction {
+            case .left: choose(.apple)
+            case .right: choose(.google)
+            default: break
+            }
+        }
     }
 
-    func updateNSView(_ control: NSSegmentedControl, context: Context) {
-        context.coordinator.parent = self
-        control.selectedSegment = Self.engines.firstIndex(of: selection) ?? 0
-        control.isEnabled = context.environment.isEnabled
-        control.setAccessibilityLabel(label)
-        control.setToolTip(appleHelp, forSegment: 0)
-        control.setToolTip(googleHelp, forSegment: 1)
+    private func engineButton(_ engine: TranslationEngine, title: String, symbol: String, help: String) -> some View {
+        Button { choose(engine) } label: {
+            Label(title, systemImage: symbol)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(selection == engine ? Color.white : Color.primary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(help)
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(selection == engine ? .isSelected : [])
+        .accessibilityIdentifier("translationEngine-\(engine.rawValue)")
     }
 
-    final class Coordinator: NSObject {
-        var parent: TranslationEngineControl
-        init(_ parent: TranslationEngineControl) { self.parent = parent }
-
-        @objc func choose(_ sender: NSSegmentedControl) {
-            guard TranslationEngineControl.engines.indices.contains(sender.selectedSegment) else { return }
-            let engine = TranslationEngineControl.engines[sender.selectedSegment]
-            if engine != parent.selection { parent.selection = engine }
-        }
+    private func choose(_ engine: TranslationEngine) {
+        guard isEnabled, engine != selection else { return }
+        selection = engine
     }
 }

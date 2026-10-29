@@ -8,6 +8,56 @@ import XCTest
 
 final class LanguageSelectionTests: XCTestCase {
     @MainActor
+    func testEngineHighlightSlidesAndIgnoresRepeatedOrDisabledClicks() throws {
+        _ = NSApplication.shared
+        let state = EngineSelectionState()
+        let (host, window) = fixture(EngineSelectionFixture(state: state).accentColor(.blue),
+                                    size: NSSize(width: 190, height: 28))
+        defer { window.close() }
+        settle(0.1)
+        func sample() throws -> CGFloat {
+            host.layoutSubtreeIfNeeded()
+            let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            let scale = CGFloat(bitmap.pixelsWide) / host.bounds.width
+            return try blueCenter(bitmap, row: Int(24 * scale), columns: 0..<bitmap.pixelsWide) / scale
+        }
+        func assertSlide(from start: CGFloat, to end: CGFloat) throws {
+            let points = try animationFrames(sample)
+            settle(0.1)
+            XCTAssertEqual(try sample(), end, accuracy: 3)
+            if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+                XCTAssertTrue(points.contains { $0 > min(start, end) + 3 && $0 < max(start, end) - 3 },
+                              "The engine highlight must slide as one shape: \(points)")
+            }
+        }
+        let apple = try sample()
+        let google = apple + 95
+        try click(host, window: window, point: NSPoint(x: 142, y: 14))
+        XCTAssertEqual(state.engine, .google)
+        XCTAssertEqual(state.changes, 1)
+        try assertSlide(from: apple, to: google)
+        try click(host, window: window, point: NSPoint(x: 142, y: 14))
+        XCTAssertEqual(state.changes, 1, "Clicking the active engine must not submit another request")
+        try click(host, window: window, point: NSPoint(x: 47, y: 14))
+        XCTAssertEqual(state.engine, .apple)
+        try assertSlide(from: google, to: apple)
+        for x in [142.0, 47.0, 142.0] {
+            try click(host, window: window, point: NSPoint(x: x, y: 14))
+            settle(0.03)
+        }
+        settle(0.3)
+        XCTAssertEqual(state.engine, .google)
+        XCTAssertEqual(state.changes, 5)
+        XCTAssertEqual(try sample(), google, accuracy: 3)
+        state.enabled = false
+        settle(0.05)
+        try click(host, window: window, point: NSPoint(x: 47, y: 14))
+        XCTAssertEqual(state.engine, .google)
+        XCTAssertEqual(state.changes, 5)
+    }
+
+    @MainActor
     func testAnimationSamplingSeesIntermediatePositions() throws {
         _ = NSApplication.shared
         try XCTSkipIf(NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
@@ -153,6 +203,23 @@ final class LanguageSelectionTests: XCTestCase {
 
     private func settle(_ interval: TimeInterval) {
         RunLoop.main.run(until: Date().addingTimeInterval(interval))
+    }
+}
+
+private final class EngineSelectionState: ObservableObject {
+    @Published var engine = TranslationEngine.apple
+    @Published var enabled = true
+    var changes = 0
+}
+
+private struct EngineSelectionFixture: View {
+    @ObservedObject var state: EngineSelectionState
+    var body: some View {
+        TranslationEngineControl(selection: Binding(get: { state.engine }, set: {
+            state.engine = $0
+            state.changes += 1
+        }), label: "Engine", appleHelp: "Local", googleHelp: "Cloud")
+        .disabled(!state.enabled)
     }
 }
 

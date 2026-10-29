@@ -8,32 +8,6 @@ import XCTest
 
 final class InterfaceTests: XCTestCase {
     @MainActor
-    func testEngineSegmentsSwitchOnceAndIgnoreRepeatedOrInvalidSelection() {
-        _ = NSApplication.shared
-        var engine = TranslationEngine.apple
-        var changes = 0
-        let view = TranslationEngineControl(selection: Binding(
-            get: { engine }, set: { engine = $0; changes += 1 }
-        ), label: "Engine", appleHelp: "Local", googleHelp: "Cloud")
-        let coordinator = view.makeCoordinator()
-        let control = NSSegmentedControl(labels: ["Apple", "Google"], trackingMode: .selectOne,
-                                         target: nil, action: nil)
-        control.selectedSegment = 1
-        coordinator.choose(control)
-        XCTAssertEqual(engine, .google)
-        XCTAssertEqual(changes, 1)
-        coordinator.choose(control)
-        XCTAssertEqual(changes, 1, "Clicking the active engine must not submit another request")
-        control.selectedSegment = -1
-        coordinator.choose(control)
-        XCTAssertEqual(changes, 1)
-        control.selectedSegment = 0
-        coordinator.choose(control)
-        XCTAssertEqual(engine, .apple)
-        XCTAssertEqual(changes, 2)
-    }
-
-    @MainActor
     func testNativeInterfacesFitAndRenderWithoutNetworkOrVisibleWindows() throws {
         _ = NSApplication.shared
         AppPreferences.registerDefaults()
