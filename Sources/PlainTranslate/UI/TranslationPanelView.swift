@@ -285,7 +285,7 @@ struct TranslationPanelView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .accessibilityIdentifier("translationError")
                         } else {
-                            Text(model.output.isEmpty ? (compact ? text.waiting : text.title) : model.output)
+                            Text(model.output.isEmpty ? text.title : model.output)
                                 .font(.system(size: compact ? TranslationCompactLayout.fontSize(popupFontSize) : 18))
                                 .foregroundStyle(model.output.isEmpty ? .secondary : .primary)
                                 .textSelection(.enabled)
