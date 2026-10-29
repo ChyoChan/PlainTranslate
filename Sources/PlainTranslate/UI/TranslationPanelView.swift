@@ -56,10 +56,26 @@ struct TranslationPanelView: View {
         .frame(width: 190, height: 28)
     }
 
+    private var brandMark: some View {
+        Group {
+            if let mark = NSImage(named: "BrandMarkTemplate") {
+                Image(nsImage: mark)
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 18, height: 18)
+            } else {
+                Text("PlainTranslate").font(.headline)
+            }
+        }
+        .foregroundStyle(.primary)
+        .accessibilityLabel("PlainTranslate")
+    }
+
     private var compactContent: some View {
         VStack(spacing: 10) {
             HStack(spacing: 10) {
-                Image(systemName: "character.bubble").font(.title3).accessibilityHidden(true)
+                brandMark
                 enginePicker
                 Spacer(minLength: 0)
                 closeButton
@@ -100,8 +116,7 @@ struct TranslationPanelView: View {
     private var editorContent: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
-                Label(text.title, systemImage: "character.bubble")
-                    .font(.headline)
+                brandMark
                 enginePicker
                 Spacer(minLength: 8)
                 HStack(spacing: 8) {

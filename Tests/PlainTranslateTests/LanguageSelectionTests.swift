@@ -85,6 +85,7 @@ final class LanguageSelectionTests: XCTestCase {
     @MainActor
     func testNativeLanguageTabsSlideForwardAndBackwardAcrossPresentations() throws {
         _ = NSApplication.shared
+        try prepareBrandMarkForUITests()
         try XCTSkipIf(NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
         let previousLanguage = L10n.shared.language
         let keys = [DefaultsKey.appLanguage, DefaultsKey.translationRecentSourceLanguages,

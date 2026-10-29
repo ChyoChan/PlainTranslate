@@ -10,6 +10,7 @@ final class InterfaceTests: XCTestCase {
     @MainActor
     func testNativeInterfacesFitAndRenderWithoutNetworkOrVisibleWindows() throws {
         _ = NSApplication.shared
+        try prepareBrandMarkForUITests()
         AppPreferences.registerDefaults()
         let previousLanguage = L10n.shared.language
         defer { L10n.shared.setLanguage(previousLanguage) }
@@ -77,4 +78,16 @@ final class InterfaceTests: XCTestCase {
         }
         window.close()
     }
+}
+
+@MainActor
+func prepareBrandMarkForUITests() throws {
+    guard NSImage(named: "BrandMarkTemplate") == nil else { return }
+    // SwiftPM tests do not run inside the app bundle assembled by build.sh.
+    let resources = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources/Brand")
+    let mark = try XCTUnwrap(NSImage(contentsOf: resources.appendingPathComponent("BrandMarkTemplate@2x.png")))
+    mark.size = NSSize(width: 18, height: 18)
+    mark.isTemplate = true
+    XCTAssertTrue(mark.setName("BrandMarkTemplate"))
 }
