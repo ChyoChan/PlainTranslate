@@ -21,6 +21,18 @@ APP_MINIMUM_MACOS="$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' 
 SDK_FLAGS=(--sdk "$MACOS_SDK_PATH" -Xlinker -platform_version -Xlinker macos -Xlinker "$APP_MINIMUM_MACOS" -Xlinker "$MACOS_SDK_VERSION")
 if $TEST; then exec swift test "${SDK_FLAGS[@]}"; fi
 
+SIGNING_CONFIG="$ROOT/.local-signing-identity"
+if [[ -n "${PLAINTRANSLATE_SIGNING_IDENTITY:-}" ]]; then
+  SIGNING_IDENTITY="$PLAINTRANSLATE_SIGNING_IDENTITY"
+elif [[ -e "$SIGNING_CONFIG" || -L "$SIGNING_CONFIG" ]]; then
+  [[ -f "$SIGNING_CONFIG" && ! -L "$SIGNING_CONFIG" ]] || { print -u2 'Invalid local signing configuration.'; exit 1; }
+  SIGNING_IDENTITY="$(<"$SIGNING_CONFIG")"
+  [[ "$SIGNING_IDENTITY" =~ '^[[:xdigit:]]{40}$' ]] || { print -u2 'Invalid local signing certificate fingerprint.'; exit 1; }
+else
+  SIGNING_IDENTITY='-'
+  print -u2 'Ad-hoc signing: run ./Tools/SetupLocalSigning.sh once to preserve local Accessibility identity across updates.'
+fi
+
 swift build "${SDK_FLAGS[@]}" -c release --product PlainTranslate
 BIN_DIR="$(swift build "${SDK_FLAGS[@]}" -c release --show-bin-path)"
 mkdir -p "$ROOT/build"
@@ -42,7 +54,6 @@ if git rev-parse --verify HEAD >/dev/null 2>&1; then
 fi
 swift -module-cache-path "$ROOT/.build/icon-module-cache" Tools/MakeIcon.swift Resources/Brand/AppIcon.png "$STAGE/AppIcon.iconset"
 iconutil -c icns "$STAGE/AppIcon.iconset" -o "$APP/Contents/Resources/AppIcon.icns"
-SIGNING_IDENTITY="${PLAINTRANSLATE_SIGNING_IDENTITY:--}"
 codesign --force --sign "$SIGNING_IDENTITY" --options runtime --timestamp=none "$APP"
 codesign --verify --deep --strict "$APP"
 rm -rf -- "$ROOT/build/PlainTranslate.app"

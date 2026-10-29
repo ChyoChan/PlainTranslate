@@ -5,6 +5,7 @@ build/
 xcuserdata/
 .env
 .env.*
+/.local-signing-identity
 *.p12
 *.mobileprovision
 *.keychain

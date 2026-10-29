@@ -67,11 +67,39 @@ cd PlainTranslate
 open build/PlainTranslate.app
 ```
 
-`build.sh` builds for the host Mac's architecture, packages the app and applies
-an **ad-hoc local signature**. It does not notarize the app or create a signing
-certificate or Keychain. Downloaded preview builds may therefore be blocked by
-Gatekeeper. A local signature is not a Developer ID signature or Apple
-notarization; normal public-distribution signing is a separate release step.
+`build.sh` builds for the host Mac's architecture and packages the app. Without
+a configured signing identity it uses an **ad-hoc signature**; those builds can
+require renewed Accessibility permission whenever their code changes.
+
+For stable signing on your own Mac, run this setup once before building:
+
+```sh
+./Tools/SetupLocalSigning.sh
+./build.sh
+```
+
+Setup creates a dedicated, self-signed **PlainTranslate Local Development**
+certificate in your existing default user Keychain, or reuses that identity.
+Its private key is imported as non-extractable with access restricted to
+`/usr/bin/codesign`. Temporary key files are removed when setup exits; no
+Keychain password is read or saved. The ignored `.local-signing-identity` file
+contains only the public certificate fingerprint. Subsequent builds in this
+checkout reuse it and fail if it cannot sign, rather than falling back to
+ad-hoc signing. Setup also verifies that two changed test apps retain the same
+certificate-bound signing requirement. Keep this Keychain identity: deleting
+or replacing it requires a new Accessibility grant. A new checkout can rerun
+setup to reuse the existing identity.
+
+Switching from an ad-hoc build requires one new Accessibility grant in
+**System Settings → Privacy & Security → Accessibility**. Later local updates
+signed with the same certificate and bundle identifier should retain it.
+Setup does not change system trust settings, grant permissions, modify other
+apps, or create a new Keychain.
+
+Neither signing mode notarizes the app. Downloaded preview builds may still be
+blocked by Gatekeeper. Local signing is not Developer ID signing or Apple
+notarization; public-distribution signing is a separate release step. CI uses
+ad-hoc signing and does not receive your local private key.
 
 To install the built app in `/Applications`, quit an existing PlainTranslate
 instance, then run:
@@ -174,7 +202,7 @@ on a Mac with the needed language models installed.
 Sources/PlainTranslate/   Native app, translation services, settings and UI
 Tests/PlainTranslateTests/  Isolated XCTest regressions
 Resources/               App bundle metadata
-Tools/                   Original icon generation
+Tools/                   Icon generation and optional local signing setup
 build.sh                 Independent build and optional installation
 ```
 
