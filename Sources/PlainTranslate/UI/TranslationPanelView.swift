@@ -60,8 +60,8 @@ struct TranslationPanelView: View {
         VStack(spacing: 10) {
             HStack(spacing: 10) {
                 Image(systemName: "character.bubble").font(.title3).accessibilityHidden(true)
-                Spacer(minLength: 0)
                 enginePicker
+                Spacer(minLength: 0)
                 closeButton
             }
             languagePicker(text.to, selection: targetSelection, detectsLanguage: false)
