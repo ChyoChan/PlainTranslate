@@ -229,8 +229,6 @@ struct TranslationPanelView: View {
                 VStack(alignment: .leading, spacing: compact ? 0 : 12) {
                     if compact, !model.input.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(text.source).font(.caption.weight(.semibold)).foregroundStyle(.primary)
-                                .accessibilityAddTraits(.isHeader)
                             Text(model.input)
                                 .font(.system(size: TranslationCompactLayout.fontSize(popupFontSize)))
                                 .textSelection(.enabled)
@@ -238,13 +236,11 @@ struct TranslationPanelView: View {
                             languageActions(.original)
                         }
                         .padding(12)
+                        .accessibilityElement(children: .contain)
+                        .accessibilityLabel(text.source)
                         Divider().id(Self.resultAnchor)
                     }
                     VStack(alignment: .leading, spacing: compact ? 8 : 12) {
-                        if compact, !model.input.isEmpty {
-                            Text(text.result).font(.caption.weight(.semibold)).foregroundStyle(.primary)
-                                .accessibilityAddTraits(.isHeader)
-                        }
                         if model.busy {
                             HStack(spacing: 8) {
                                 ProgressView().controlSize(.small)
@@ -288,6 +284,8 @@ struct TranslationPanelView: View {
                         if compact { languageActions(.translation) }
                     }
                     .padding(compact ? 12 : 0)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel(text.result)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background {
