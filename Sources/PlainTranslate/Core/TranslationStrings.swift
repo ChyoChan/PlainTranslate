@@ -99,7 +99,7 @@ struct TranslationStrings {
     }
     var cancel: String { t("Cancel", "取消") }
     var close: String { t("Close", "關閉", "关闭") }
-    var edit: String { t("Edit", "編輯", "编辑") }
+    var expand: String { t("Expand to edit", "展開編輯", "展开编辑") }
     var compact: String { t("Compact view", "精簡檢視", "精简视图") }
     var swap: String { t("Swap languages", "交換語言", "交换语言") }
     var inputPlaceholder: String { t("Type or paste text to translate", "輸入或貼上要翻譯的文字", "输入或粘贴要翻译的文字") }
@@ -174,7 +174,7 @@ struct TranslationStrings {
     }
     var loading: String { t("Translating…", "翻譯中…", "翻译中…") }
     var reading: String { t("Reading copied text…", "正在讀取已複製文字…", "正在读取已复制文字…") }
-    var empty: String { t("Copy some text, or choose Edit to enter it, then translate.", "請複製文字，或按「編輯」輸入，再按翻譯。", "请复制文字，或按“编辑”输入，再按翻译。") }
+    var empty: String { t("Copy some text, or choose Expand to edit and type it.", "請複製文字，或按「展開編輯」輸入文字。", "请复制文字，或按“展开编辑”输入文字。") }
     var tooLong: String { t("Translate up to 40,000 characters at a time. Select a shorter passage.", "每次最多翻譯 40,000 個字元，請選取較短的內容。", "每次最多翻译 40,000 个字符，请选取较短的内容。") }
     var sensitive: String { t("This copy is marked private and will not be translated.", "這筆複製內容標記為私密，不會讀取或翻譯。", "此复制内容标记为私密，不会读取或翻译。") }
     var unsupported: String { t("Apple does not support this language pair on this Mac. Choose another language.", "這部 Mac 的 Apple 翻譯不支援此語言組合，請選擇其他語言。", "这台 Mac 的 Apple 翻译不支持此语言组合，请选择其他语言。") }

@@ -78,7 +78,10 @@ struct TranslationPanelView: View {
                 brandMark
                 enginePicker
                 Spacer(minLength: 0)
-                closeButton
+                HStack(spacing: 8) {
+                    presentationButton
+                    closeButton
+                }
             }
             languagePicker(text.to, selection: targetSelection, detectsLanguage: false)
             resultText(compact: true)
@@ -96,12 +99,6 @@ struct TranslationPanelView: View {
     private var compactActions: some View {
         HStack(spacing: 10) {
             copyButton.fixedSize()
-            Button { model.open(.editor) } label: {
-                Label(text.edit, systemImage: "square.and.pencil")
-                    .frame(minHeight: 20)
-            }
-            .help(text.edit)
-            .fixedSize()
             Spacer(minLength: 0)
             speechButton(.original).fixedSize()
             speechButton(.translation).fixedSize()
@@ -127,13 +124,7 @@ struct TranslationPanelView: View {
                     .help(l10n.language == .en ? "Settings" : "設定")
                     .accessibilityLabel(l10n.language == .en ? "Settings" : "設定")
                     .accessibilityIdentifier("translationSettings")
-                    Button { model.open(.compact) } label: {
-                        Image(systemName: "arrow.down.right.and.arrow.up.left")
-                    }
-                    .buttonStyle(TranslationToolbarButtonStyle())
-                    .help(text.compact)
-                    .accessibilityLabel(text.compact)
-                    .accessibilityIdentifier("translationCompactView")
+                    presentationButton
                     closeButton
                 }
             }
@@ -230,6 +221,18 @@ struct TranslationPanelView: View {
         .help(model.copied ? text.copied : text.copy)
         .accessibilityLabel(model.copied ? text.copied : text.copy)
         .accessibilityIdentifier("translationCopyResult")
+    }
+
+    private var presentationButton: some View {
+        let compact = model.presentation == .compact
+        let label = compact ? text.expand : text.compact
+        return Button { model.open(compact ? .editor : .compact) } label: {
+            Image(systemName: compact ? "arrow.up.left.and.arrow.down.right" : "arrow.down.right.and.arrow.up.left")
+        }
+        .buttonStyle(TranslationToolbarButtonStyle())
+        .help(label)
+        .accessibilityLabel(label)
+        .accessibilityIdentifier(compact ? "translationEditView" : "translationCompactView")
     }
 
     private var closeButton: some View {
