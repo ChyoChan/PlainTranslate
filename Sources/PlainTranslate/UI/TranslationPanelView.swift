@@ -105,20 +105,23 @@ struct TranslationPanelView: View {
                     .font(.headline)
                 enginePicker
                 Spacer(minLength: 8)
-                Button { SettingsNavigation.shared.show() } label: {
-                    Image(systemName: "gearshape")
-                }
-                .help(l10n.language == .en ? "Settings" : "設定")
-                .accessibilityLabel(l10n.language == .en ? "Settings" : "設定")
-                Button { model.open(.compact) } label: {
-                    ViewThatFits(in: .horizontal) {
-                        Label(text.compact, systemImage: "rectangle.compress.vertical")
-                        Image(systemName: "rectangle.compress.vertical")
+                HStack(spacing: 8) {
+                    Button { SettingsNavigation.shared.show() } label: {
+                        Image(systemName: "gearshape")
                     }
+                    .buttonStyle(TranslationToolbarButtonStyle())
+                    .help(l10n.language == .en ? "Settings" : "設定")
+                    .accessibilityLabel(l10n.language == .en ? "Settings" : "設定")
+                    .accessibilityIdentifier("translationSettings")
+                    Button { model.open(.compact) } label: {
+                        Image(systemName: "arrow.down.right.and.arrow.up.left")
+                    }
+                    .buttonStyle(TranslationToolbarButtonStyle())
+                    .help(text.compact)
+                    .accessibilityLabel(text.compact)
+                    .accessibilityIdentifier("translationCompactView")
+                    closeButton
                 }
-                .help(text.compact)
-                .accessibilityLabel(text.compact)
-                closeButton
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
@@ -217,9 +220,9 @@ struct TranslationPanelView: View {
 
     private var closeButton: some View {
         Button { model.close() } label: { Image(systemName: "xmark") }
-            .buttonStyle(.borderless)
-            .frame(width: 28, height: 28)
+            .buttonStyle(TranslationToolbarButtonStyle(isClose: true))
             .accessibilityLabel(text.close)
+            .accessibilityIdentifier("translationClose")
             .help(text.close)
             .keyboardShortcut(.cancelAction)
     }
@@ -292,8 +295,8 @@ struct TranslationPanelView: View {
             }
             .onPreferenceChange(TranslationResultHeight.self) { height in
                 guard compact, height > 0 else { return }
-                // Header (28), languages (38), footer (32), spacing (30), padding (24).
-                model.fitCompactContent(height: height + 152)
+                // Header (34), languages (38), footer (32), spacing (30), padding (24).
+                model.fitCompactContent(height: height + 158)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .accessibilityLabel(compact ? text.title : text.result)
@@ -414,6 +417,29 @@ struct TranslationPanelView: View {
     private func languageName(_ identifier: String) -> String {
         identifier == "auto" ? text.auto :
             (Locale(identifier: l10n.language.rawValue).localizedString(forIdentifier: identifier) ?? identifier)
+    }
+}
+
+private struct TranslationToolbarButtonStyle: ButtonStyle {
+    var isClose = false
+    @State private var hovered = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 16))
+            .foregroundStyle(hovered && isClose ? Color.red :
+                (hovered || configuration.isPressed ? Color.primary : Color.secondary))
+            .frame(width: 34, height: 34)
+            .background {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(configuration.isPressed ? Color.primary.opacity(0.14) :
+                        (hovered ? (isClose ? Color.red.opacity(0.12) : Color.primary.opacity(0.07)) : .clear))
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 8))
+            .onHover { hovered = $0 }
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: hovered)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: configuration.isPressed)
     }
 }
 
