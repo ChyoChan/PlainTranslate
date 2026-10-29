@@ -23,8 +23,8 @@ final class InterfaceTests: XCTestCase {
         for (language, scheme) in [(AppLanguage.en, ColorScheme.light), (.en, .dark), (.zhHK, .light), (.zhHK, .dark)] {
             L10n.shared.setLanguage(language)
             for (name, mode, size) in [
-                ("compact", TranslationPresentation.compact, NSSize(width: 630, height: 390)),
-                ("compact-narrow", TranslationPresentation.compact, NSSize(width: 400, height: 420)),
+                ("compact", TranslationPresentation.compact, NSSize(width: 630, height: 520)),
+                ("compact-narrow", TranslationPresentation.compact, NSSize(width: 400, height: 620)),
                 ("editor", TranslationPresentation.editor, NSSize(width: 880, height: 520)),
                 ("editor-narrow", TranslationPresentation.editor, NSSize(width: 620, height: 380)),
             ] {
@@ -46,9 +46,70 @@ final class InterfaceTests: XCTestCase {
             try render(TranslationPanelView(model: emptyModel).environment(\.colorScheme, scheme),
                        size: NSSize(width: 880, height: 520), name: "editor-empty-\(language.rawValue)-\(scheme)", directory: directory)
             emptyModel.close()
+            let compactModel = TranslationService(presentation: .compact)
+            try render(TranslationPanelView(model: compactModel).environment(\.colorScheme, scheme),
+                       size: NSSize(width: 630, height: 230), name: "compact-empty-\(language.rawValue)-\(scheme)", directory: directory)
+            compactModel.input = "Good morning."
+            compactModel.translate()
+            let compactRequest = try XCTUnwrap(compactModel.request)
+            compactModel.finish(compactRequest.id, result: .success("早安。"))
+            try render(TranslationPanelView(model: compactModel).environment(\.colorScheme, scheme),
+                       size: NSSize(width: 630, height: 390), name: "compact-short-\(language.rawValue)-\(scheme)", directory: directory)
+            compactModel.translate()
+            let failedRequest = try XCTUnwrap(compactModel.request)
+            compactModel.finish(failedRequest.id, result: .failure(TranslationUnsupportedPair()))
+            try render(TranslationPanelView(model: compactModel).environment(\.colorScheme, scheme),
+                       size: NSSize(width: 400, height: 520), name: "compact-error-\(language.rawValue)-\(scheme)", directory: directory)
+            compactModel.close()
             try render(SettingsView(inspectCredentials: false).environment(\.colorScheme, scheme),
                        size: NSSize(width: 680, height: 680), name: "settings-\(language.rawValue)-\(scheme)", directory: directory)
         }
+    }
+
+    @MainActor
+    func testCompactLongOriginalAndTranslationRemainScrollable() async throws {
+        _ = NSApplication.shared
+        try prepareBrandMarkForUITests()
+        AppPreferences.registerDefaults()
+        let model = TranslationService(presentation: .compact)
+        let original = String(repeating: "An original paragraph that remains available above its translation.\n\n", count: 60)
+        model.input = original
+        model.translate()
+        let request = try XCTUnwrap(model.request)
+        model.finish(request.id, result: .success(String(repeating: "譯文仍然顯示在原文下方。\n\n", count: 20)))
+        let size = NSSize(width: 630, height: 390)
+        let host = NSHostingView(rootView: TranslationPanelView(model: model))
+        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),
+                              styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        host.setFrameSize(size)
+        window.alphaValue = 0
+        window.ignoresMouseEvents = true
+        window.setFrameOrigin(NSPoint(x: -10000, y: -10000))
+        window.orderFront(nil)
+        defer { window.close(); model.close() }
+        host.layoutSubtreeIfNeeded()
+        let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        try await Task.sleep(nanoseconds: 200_000_000)
+        func findScrollView(in view: NSView) -> NSScrollView? {
+            if let scroll = view as? NSScrollView { return scroll }
+            return view.subviews.lazy.compactMap { findScrollView(in: $0) }.first
+        }
+        let scroll = try XCTUnwrap(findScrollView(in: host))
+        let document = try XCTUnwrap(scroll.documentView)
+        XCTAssertGreaterThan(document.bounds.height, scroll.contentView.bounds.height * 2)
+        scroll.contentView.scroll(to: NSPoint(x: 0, y: document.bounds.height - scroll.contentView.bounds.height))
+        scroll.reflectScrolledClipView(scroll.contentView)
+        XCTAssertGreaterThan(scroll.contentView.bounds.origin.y, scroll.contentView.bounds.height,
+                             "The translation and its controls must remain reachable below a long original")
+        scroll.contentView.scroll(to: .zero)
+        scroll.reflectScrolledClipView(scroll.contentView)
+        XCTAssertEqual(scroll.contentView.bounds.origin.y, 0, accuracy: 1,
+                       "The original and its controls must remain reachable by scrolling up")
+        XCTAssertEqual(model.input, original)
+        XCTAssertFalse(model.output.isEmpty)
     }
 
     @MainActor

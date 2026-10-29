@@ -85,29 +85,16 @@ struct TranslationPanelView: View {
             }
             languagePicker(text.to, selection: targetSelection, detectsLanguage: false)
             resultText(compact: true)
-                .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
-                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(nsColor: .separatorColor)))
-            ViewThatFits(in: .horizontal) {
-                compactActions
-                compactActions.labelStyle(.iconOnly)
+            if model.busy || (model.output.isEmpty && !model.input.isEmpty) {
+                Button(model.busy ? text.cancel : text.translate) {
+                    if model.busy { model.cancel() }
+                    else { model.translate() }
+                }
+                .controlSize(.large)
+                .frame(maxWidth: .infinity, alignment: .trailing)
             }
-            .controlSize(.large)
         }
         .padding(12)
-    }
-
-    private var compactActions: some View {
-        HStack(spacing: 10) {
-            copyButton.fixedSize()
-            Spacer(minLength: 0)
-            speechButton(.original).fixedSize()
-            speechButton(.translation).fixedSize()
-            if model.busy {
-                Button(text.cancel) { model.cancel() }
-            } else if model.output.isEmpty && !model.input.isEmpty {
-                Button(text.translate) { model.translate() }
-            }
-        }
     }
 
     private var editorContent: some View {
@@ -170,29 +157,15 @@ struct TranslationPanelView: View {
     private func languageActions(_ part: TranslationSpeechPart) -> some View {
         HStack {
             speechButton(part)
-                .frame(width: 32, height: 32)
             Spacer(minLength: 8)
-            if part == .original, model.busy {
+            if part == .original, model.busy, model.presentation == .editor {
                 Button(text.cancel) { model.cancel() }.font(.callout)
                 Spacer(minLength: 8)
             }
-            if part == .original {
-                Button { model.copyOriginal() } label: {
-                    Label(model.copiedOriginal ? text.copied : text.copyOriginal,
-                          systemImage: model.copiedOriginal ? "checkmark" : "doc.on.doc")
-                }
-                .disabled(model.input.isEmpty || model.busy)
-                .help(model.copiedOriginal ? text.copied : text.copyOriginal)
-                .accessibilityLabel(model.copiedOriginal ? text.copied : text.copyOriginal)
-                .accessibilityIdentifier("translationCopyOriginal")
-                .frame(width: 32, height: 32)
-            } else {
-                copyButton.frame(width: 32, height: 32)
-            }
+            copyButton(part)
         }
         .labelStyle(.iconOnly)
         .buttonStyle(.borderless)
-        .font(.system(size: 18))
     }
 
     private func speechButton(_ part: TranslationSpeechPart) -> some View {
@@ -201,9 +174,8 @@ struct TranslationPanelView: View {
         let content = part == .original ? model.input : model.output
         return Button { model.toggleSpeech(part) } label: {
             Label(label, systemImage: speaking ? "stop.fill" : "speaker.wave.2")
-                .frame(minHeight: model.presentation == .compact ? 20 : nil)
         }
-        .controlSize(model.presentation == .compact ? .large : .small)
+        .buttonStyle(TranslationToolbarButtonStyle())
         .disabled(model.busy || content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         .accessibilityLabel(label)
         .accessibilityValue(speaking ? text.speaking : "")
@@ -211,16 +183,21 @@ struct TranslationPanelView: View {
         .help(label)
     }
 
-    private var copyButton: some View {
-        Button { model.copyOutput() } label: {
-            Label(model.copied ? text.copied : text.copy,
-                  systemImage: model.copied ? "checkmark" : "doc.on.doc")
-                .frame(minHeight: model.presentation == .compact ? 20 : nil)
+    private func copyButton(_ part: TranslationSpeechPart) -> some View {
+        let original = part == .original
+        let copied = original ? model.copiedOriginal : model.copied
+        let label = copied ? text.copied : (original ? text.copyOriginal : text.copy)
+        return Button {
+            if original { model.copyOriginal() }
+            else { model.copyOutput() }
+        } label: {
+            Label(label, systemImage: copied ? "checkmark" : "doc.on.doc")
         }
-        .disabled(model.output.isEmpty || model.busy)
-        .help(model.copied ? text.copied : text.copy)
-        .accessibilityLabel(model.copied ? text.copied : text.copy)
-        .accessibilityIdentifier("translationCopyResult")
+        .buttonStyle(TranslationToolbarButtonStyle())
+        .disabled((original ? model.input : model.output).isEmpty || model.busy)
+        .help(label)
+        .accessibilityLabel(label)
+        .accessibilityIdentifier(original ? "translationCopyOriginal" : "translationCopyResult")
     }
 
     private var presentationButton: some View {
@@ -249,71 +226,94 @@ struct TranslationPanelView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     if compact, !model.input.isEmpty {
-                        Text(text.source).font(.caption.weight(.semibold)).foregroundStyle(.primary)
-                            .accessibilityAddTraits(.isHeader)
-                        Text(model.input)
-                            .font(.system(size: TranslationCompactLayout.fontSize(popupFontSize)))
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        Divider().id(Self.resultAnchor)
-                        Text(text.result).font(.caption.weight(.semibold)).foregroundStyle(.primary)
-                            .accessibilityAddTraits(.isHeader)
-                    }
-                    if model.busy {
-                        HStack(spacing: 8) {
-                            ProgressView().controlSize(.small)
-                            Text(model.message ?? text.loading).font(.callout)
-                        }
-                        .accessibilityElement(children: .combine)
-                    } else {
-                        if model.output.isEmpty, let message = model.message {
-                            VStack(alignment: .leading, spacing: 10) {
-                                Label(text.translationUnavailable, systemImage: "exclamationmark.triangle")
-                                    .font(.headline)
-                                Text(message)
-                                    .font(.system(size: compact ? TranslationCompactLayout.fontSize(popupFontSize) : 18))
-                                    .textSelection(.enabled)
-                                if model.offersGoogleKeySetup {
-                                    Button { SettingsNavigation.shared.requestGoogleCredentials() } label: {
-                                        Label(text.configureGoogleKey, systemImage: "key")
-                                    }
-                                    .buttonStyle(.borderedProminent)
-                                    .accessibilityIdentifier("configureGoogleKey")
-                                }
-                            }
-                            .foregroundStyle(.primary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .accessibilityIdentifier("translationError")
-                        } else {
-                            Text(model.output.isEmpty ? text.title : model.output)
-                                .font(.system(size: compact ? TranslationCompactLayout.fontSize(popupFontSize) : 18))
-                                .foregroundStyle(model.output.isEmpty ? .secondary : .primary)
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text(text.source).font(.caption.weight(.semibold)).foregroundStyle(.primary)
+                                .accessibilityAddTraits(.isHeader)
+                            Text(model.input)
+                                .font(.system(size: TranslationCompactLayout.fontSize(popupFontSize)))
                                 .textSelection(.enabled)
                                 .frame(maxWidth: .infinity, alignment: .leading)
+                            languageActions(.original)
                         }
-                        if !model.output.isEmpty, let message = model.message {
-                            Text(message).font(.callout).foregroundStyle(.primary)
+                        .padding(12)
+                        .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
+                        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color(nsColor: .separatorColor)))
+                    }
+                    VStack(alignment: .leading, spacing: 12) {
+                        if compact, !model.input.isEmpty {
+                            Text(text.result).font(.caption.weight(.semibold)).foregroundStyle(.primary)
+                                .accessibilityAddTraits(.isHeader)
                         }
-                        if let message = model.speechMessage {
-                            Text(message).font(.callout).foregroundStyle(.primary)
-                                .accessibilityIdentifier("translationSpeechMessage")
+                        if model.busy {
+                            HStack(spacing: 8) {
+                                ProgressView().controlSize(.small)
+                                Text(model.message ?? text.loading).font(.callout)
+                            }
+                            .accessibilityElement(children: .combine)
+                        } else {
+                            if model.output.isEmpty, let message = model.message {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    Label(text.translationUnavailable, systemImage: "exclamationmark.triangle")
+                                        .font(.headline)
+                                    Text(message)
+                                        .font(.system(size: compact ? TranslationCompactLayout.fontSize(popupFontSize) : 18))
+                                        .textSelection(.enabled)
+                                    if model.offersGoogleKeySetup {
+                                        Button { SettingsNavigation.shared.requestGoogleCredentials() } label: {
+                                            Label(text.configureGoogleKey, systemImage: "key")
+                                        }
+                                        .buttonStyle(.borderedProminent)
+                                        .accessibilityIdentifier("configureGoogleKey")
+                                    }
+                                }
+                                .foregroundStyle(.primary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .accessibilityIdentifier("translationError")
+                            } else {
+                                Text(model.output.isEmpty ? text.title : model.output)
+                                    .font(.system(size: compact ? TranslationCompactLayout.fontSize(popupFontSize) : 18))
+                                    .foregroundStyle(model.output.isEmpty ? .secondary : .primary)
+                                    .textSelection(.enabled)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            if !model.output.isEmpty, let message = model.message {
+                                Text(message).font(.callout).foregroundStyle(.primary)
+                            }
+                            if let message = model.speechMessage {
+                                Text(message).font(.callout).foregroundStyle(.primary)
+                                    .accessibilityIdentifier("translationSpeechMessage")
+                            }
+                        }
+                        if compact { languageActions(.translation) }
+                    }
+                    .padding(compact ? 12 : 0)
+                    .background {
+                        if compact {
+                            RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: .textBackgroundColor))
                         }
                     }
+                    .overlay {
+                        if compact {
+                            RoundedRectangle(cornerRadius: 6).strokeBorder(Color(nsColor: .separatorColor))
+                        }
+                    }
+                    .id(Self.resultAnchor)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(compact ? 12 : 0)
                 .background {
                     if compact {
                         GeometryReader { geometry in
-                            Color.clear.preference(key: TranslationResultHeight.self, value: geometry.size.height)
+                            // Include the action row here so its visibility also updates the fitted height.
+                            let actionHeight: CGFloat = model.busy || (model.output.isEmpty && !model.input.isEmpty) ? 42 : 0
+                            Color.clear.preference(key: TranslationResultHeight.self,
+                                                   value: geometry.size.height + 116 + actionHeight)
                         }
                     }
                 }
             }
             .onPreferenceChange(TranslationResultHeight.self) { height in
                 guard compact, height > 0 else { return }
-                // Header (34), languages (38), footer (32), spacing (30), padding (24).
-                model.fitCompactContent(height: height + 158)
+                model.fitCompactContent(height: height)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .accessibilityLabel(compact ? text.title : text.result)
@@ -454,6 +454,7 @@ private struct TranslationToolbarButtonStyle: ButtonStyle {
     var isClose = false
     @State private var hovered = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -467,7 +468,8 @@ private struct TranslationToolbarButtonStyle: ButtonStyle {
                         (hovered ? (isClose ? Color.red.opacity(0.12) : Color.primary.opacity(0.07)) : .clear))
             }
             .contentShape(RoundedRectangle(cornerRadius: 8))
-            .onHover { hovered = $0 }
+            .opacity(isEnabled ? 1 : 0.4)
+            .onHover { hovered = $0 && isEnabled }
             .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: hovered)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: configuration.isPressed)
     }
