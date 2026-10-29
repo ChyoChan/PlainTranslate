@@ -317,51 +317,52 @@ struct TranslationPanelView: View {
         let recent = detectsLanguage ? model.recentSourceLanguages : model.recentTargetLanguages
         let hovered = detectsLanguage ? hoveredSourceLanguage : hoveredTargetLanguage
         let selectedLanguage = selection.wrappedValue
-        return HStack(spacing: 4) {
-            GeometryReader { geometry in
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 0) {
-                        ForEach(recent, id: \.self) { language in
-                            languageTab(language, selection: selection, detectsLanguage: detectsLanguage)
-                        }
-                    }
-                    .frame(minWidth: geometry.size.width)
-                    .overlayPreferenceValue(TranslationLanguageBounds.self) { bounds in
-                        GeometryReader { coordinates in
-                            if let anchor = bounds[selectedLanguage] {
-                                let frame = coordinates[anchor]
-                                // Keep one underline alive while its position and width change.
-                                Rectangle().fill(Color.accentColor)
-                                    .frame(width: frame.width, height: 2)
-                                    .offset(x: frame.minX, y: frame.maxY - 2)
-                                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: frame)
-                            }
-                        }
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
-                    }
-                    .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: hovered)
-                }
+        let tabs = HStack(spacing: 0) {
+            ForEach(recent, id: \.self) { language in
+                languageTab(language, selection: selection, detectsLanguage: detectsLanguage)
             }
-            Menu {
-                if detectsLanguage {
-                    languageMenuItem("auto", selection: selection)
-                    Divider()
-                }
-                ForEach(TranslationLanguageDefaults.languages, id: \.self) { language in
-                    languageMenuItem(language, selection: selection)
-                }
-            } label: {
-                Image(systemName: "chevron.down").frame(width: 24, height: 38)
-            }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
-            .help(title)
-            .accessibilityLabel(title)
-            .accessibilityValue(languageName(selection.wrappedValue))
         }
-        .frame(maxWidth: .infinity)
+        .overlayPreferenceValue(TranslationLanguageBounds.self) { bounds in
+            GeometryReader { coordinates in
+                if let anchor = bounds[selectedLanguage] {
+                    let frame = coordinates[anchor]
+                    // Keep one underline alive while its position and width change.
+                    Rectangle().fill(Color.accentColor)
+                        .frame(width: frame.width, height: 2)
+                        .offset(x: frame.minX, y: frame.maxY - 2)
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: frame)
+                }
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: hovered)
+        let menu = Menu {
+            if detectsLanguage {
+                languageMenuItem("auto", selection: selection)
+                Divider()
+            }
+            ForEach(TranslationLanguageDefaults.languages, id: \.self) { language in
+                languageMenuItem(language, selection: selection)
+            }
+        } label: {
+            Image(systemName: "chevron.down").frame(width: 24, height: 38)
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help(title)
+        .accessibilityLabel(title)
+        .accessibilityValue(languageName(selection.wrappedValue))
+        return ViewThatFits(in: .horizontal) {
+            HStack(spacing: 4) { tabs; menu }
+                .fixedSize(horizontal: true, vertical: false)
+            HStack(spacing: 4) {
+                ScrollView(.horizontal, showsIndicators: false) { tabs }
+                menu
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: 38)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(title)
@@ -376,7 +377,6 @@ struct TranslationPanelView: View {
         let hovered = (detectsLanguage ? hoveredSourceLanguage : hoveredTargetLanguage) == language
         return Button { selection.wrappedValue = language } label: {
             HStack(spacing: 0) {
-                Spacer(minLength: 0)
                 Text(languageName(language))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(selected || hovered ? Color.primary : Color.secondary)
@@ -391,12 +391,10 @@ struct TranslationPanelView: View {
                                 .accessibilityHidden(true)
                         }
                     }
-                Spacer(minLength: 0)
             }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .frame(maxWidth: .infinity)
         .background(hovered ? Color.primary.opacity(0.04) : .clear)
         .onHover { inside in
             if detectsLanguage {
