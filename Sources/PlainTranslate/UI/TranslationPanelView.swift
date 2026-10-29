@@ -10,7 +10,6 @@ struct TranslationPanelView: View {
     @ObservedObject private var l10n = L10n.shared
     private var text: TranslationStrings { TranslationStrings(language: l10n.language) }
     @FocusState private var inputFocused: Bool
-    @Namespace private var languageUnderline
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var hoveredSourceLanguage: String?
     @State private var hoveredTargetLanguage: String?
@@ -317,6 +316,7 @@ struct TranslationPanelView: View {
     private func languagePicker(_ title: String, selection: Binding<String>, detectsLanguage: Bool) -> some View {
         let recent = detectsLanguage ? model.recentSourceLanguages : model.recentTargetLanguages
         let hovered = detectsLanguage ? hoveredSourceLanguage : hoveredTargetLanguage
+        let selectedLanguage = selection.wrappedValue
         return HStack(spacing: 4) {
             GeometryReader { geometry in
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -326,8 +326,21 @@ struct TranslationPanelView: View {
                         }
                     }
                     .frame(minWidth: geometry.size.width)
+                    .overlayPreferenceValue(TranslationLanguageBounds.self) { bounds in
+                        GeometryReader { coordinates in
+                            if let anchor = bounds[selectedLanguage] {
+                                let frame = coordinates[anchor]
+                                // Keep one underline alive while its position and width change.
+                                Rectangle().fill(Color.accentColor)
+                                    .frame(width: frame.width, height: 2)
+                                    .offset(x: frame.minX, y: frame.maxY - 2)
+                                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: frame)
+                            }
+                        }
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                    }
                     .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: hovered)
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: selection.wrappedValue)
                 }
             }
             Menu {
@@ -370,15 +383,9 @@ struct TranslationPanelView: View {
                     .fixedSize()
                     .padding(.horizontal, 8)
                     .frame(height: 38)
+                    .anchorPreference(key: TranslationLanguageBounds.self, value: .bounds) { [language: $0] }
                     .overlay(alignment: .bottom) {
-                        if selected {
-                            Rectangle().fill(Color.accentColor)
-                                .frame(height: 2)
-                                .matchedGeometryEffect(id: detectsLanguage ? "sourceUnderline" : "targetUnderline",
-                                                       in: languageUnderline)
-                                .transition(.identity)
-                                .accessibilityHidden(true)
-                        } else if hovered {
+                        if hovered && !selected {
                             Rectangle().fill(Color.secondary)
                                 .frame(height: 2)
                                 .accessibilityHidden(true)
@@ -417,6 +424,13 @@ struct TranslationPanelView: View {
     private func languageName(_ identifier: String) -> String {
         identifier == "auto" ? text.auto :
             (Locale(identifier: l10n.language.rawValue).localizedString(forIdentifier: identifier) ?? identifier)
+    }
+}
+
+private struct TranslationLanguageBounds: PreferenceKey {
+    static let defaultValue: [String: Anchor<CGRect>] = [:]
+    static func reduce(value: inout [String: Anchor<CGRect>], nextValue: () -> [String: Anchor<CGRect>]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, next in next })
     }
 }
 
