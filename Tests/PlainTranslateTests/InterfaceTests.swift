@@ -8,6 +8,32 @@ import XCTest
 
 final class InterfaceTests: XCTestCase {
     @MainActor
+    func testEngineSegmentsSwitchOnceAndIgnoreRepeatedOrInvalidSelection() {
+        _ = NSApplication.shared
+        var engine = TranslationEngine.apple
+        var changes = 0
+        let view = TranslationEngineControl(selection: Binding(
+            get: { engine }, set: { engine = $0; changes += 1 }
+        ), label: "Engine", appleHelp: "Local", googleHelp: "Cloud")
+        let coordinator = view.makeCoordinator()
+        let control = NSSegmentedControl(labels: ["Apple", "Google"], trackingMode: .selectOne,
+                                         target: nil, action: nil)
+        control.selectedSegment = 1
+        coordinator.choose(control)
+        XCTAssertEqual(engine, .google)
+        XCTAssertEqual(changes, 1)
+        coordinator.choose(control)
+        XCTAssertEqual(changes, 1, "Clicking the active engine must not submit another request")
+        control.selectedSegment = -1
+        coordinator.choose(control)
+        XCTAssertEqual(changes, 1)
+        control.selectedSegment = 0
+        coordinator.choose(control)
+        XCTAssertEqual(engine, .apple)
+        XCTAssertEqual(changes, 2)
+    }
+
+    @MainActor
     func testNativeInterfacesFitAndRenderWithoutNetworkOrVisibleWindows() throws {
         _ = NSApplication.shared
         AppPreferences.registerDefaults()
@@ -25,6 +51,7 @@ final class InterfaceTests: XCTestCase {
                 ("compact", TranslationPresentation.compact, NSSize(width: 630, height: 390)),
                 ("compact-narrow", TranslationPresentation.compact, NSSize(width: 400, height: 420)),
                 ("editor", TranslationPresentation.editor, NSSize(width: 880, height: 520)),
+                ("editor-narrow", TranslationPresentation.editor, NSSize(width: 620, height: 380)),
             ] {
                 let model = TranslationService(presentation: mode)
                 model.input = original
@@ -40,6 +67,10 @@ final class InterfaceTests: XCTestCase {
                 XCTAssertEqual(model.output, translated)
                 model.close()
             }
+            let emptyModel = TranslationService()
+            try render(TranslationPanelView(model: emptyModel).environment(\.colorScheme, scheme),
+                       size: NSSize(width: 880, height: 520), name: "editor-empty-\(language.rawValue)-\(scheme)", directory: directory)
+            emptyModel.close()
             try render(SettingsView(inspectCredentials: false).environment(\.colorScheme, scheme),
                        size: NSSize(width: 680, height: 680), name: "settings-\(language.rawValue)-\(scheme)", directory: directory)
         }

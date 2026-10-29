@@ -45,6 +45,7 @@ struct TranslationStrings {
     var auto: String { t("Detect language", "自動辨識", "自动识别") }
     var translate: String { t("Translate", "翻譯", "翻译") }
     var copy: String { t("Copy translation", "複製譯文", "复制译文") }
+    var copyOriginal: String { t("Copy original", "複製原文", "复制原文") }
     var copied: String { t("Copied", "已複製", "已复制") }
     var paste: String { t("Use copied text", "使用已複製文字", "使用已复制文字") }
     var speakOriginal: String { t("Read original", "朗讀原文", "朗读原文") }
@@ -127,9 +128,9 @@ struct TranslationStrings {
           "只记录此功能加入后、这个 App 提交的原文字符，包含空格及换行。发送后失败或取消仍计入估算，按香港时间每月重新计算；实际用量及费用以 Google Cloud 为准。")
     }
     var googlePrivacy: String {
-        t("Google sends the original text to Google Cloud over the internet and may incur usage charges. No translation history is saved by this app.",
-          "選用 Google 時，原文會經網絡傳送到 Google Cloud，並可能產生用量費用。此 App 不保存翻譯歷史。",
-          "选择 Google 时，原文会通过网络发送到 Google Cloud，并可能产生用量费用。此 App 不保存翻译历史。")
+        t("With Google selected, pausing typing automatically sends the original text to Google Cloud and may incur usage charges. No translation history is saved by this app.",
+          "選用 Google 時，停止輸入後會自動將原文經網絡傳送到 Google Cloud，並可能產生用量費用。此 App 不保存翻譯歷史。",
+          "选择 Google 时，停止输入后会自动将原文通过网络发送到 Google Cloud，并可能产生用量费用。此 App 不保存翻译历史。")
     }
     var apiKey: String { "Google API Key" }
     var keyPlaceholder: String { t("Paste your API key", "貼上你的 API Key", "粘贴你的 API Key") }

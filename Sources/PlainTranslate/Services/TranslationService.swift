@@ -13,13 +13,17 @@ import SwiftUI
 final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AVSpeechSynthesizerDelegate {
     static let shared = TranslationService()
     @Published var input = ""
-    @Published var source = TranslationLanguageDefaults.source
-    @Published var target = TranslationLanguageDefaults.target
+    @Published var source = TranslationRecentLanguages.load(forSource: true).first ?? TranslationLanguageDefaults.source
+    @Published var target = TranslationRecentLanguages.load(forSource: false).first ?? TranslationLanguageDefaults.target
+    @Published private(set) var recentSourceLanguages = TranslationRecentLanguages.tabs(forSource: true)
+    @Published private(set) var recentTargetLanguages = TranslationRecentLanguages.tabs(forSource: false)
     @Published private(set) var output = ""
     @Published private(set) var message: String?
     @Published private(set) var googleFailure: GoogleTranslationError?
     @Published private(set) var busy = false
     @Published private(set) var copied = false
+    @Published private(set) var copiedOriginal = false
+    @Published private(set) var customShortcutUnavailable = false
     @Published private(set) var request: TranslationRequest?
     @Published private(set) var presentation: TranslationPresentation = .editor
     @Published private(set) var speakingPart: TranslationSpeechPart?
@@ -37,12 +41,17 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         return [.missingKey, .invalidKey, .denied].contains(googleFailure)
     }
     private var cloudTask: Task<Void, Never>?
+    private var autoTranslationTask: Task<Void, Never>?
+    private let autoTranslationDelay: () async throws -> Void
     private var speechSynthesizer: AVSpeechSynthesizer?
     private let speechVoices: () -> [AVSpeechSynthesisVoice]
     private var speechUtterance: AVSpeechUtterance?
     private var chineseVoice = TranslationSpeechLanguage.chineseVoice(
         UserDefaults.standard.string(forKey: DefaultsKey.translationChineseVoice))
     private var shortcutWasEnabled: Bool?
+    private lazy var customHotKey = TranslationGlobalHotKey { [weak self] in self?.translateSelection() }
+    private var selectionCopyInFlight = false
+    private var recordingShortcut = false
     private var panel: NSPanel?
     private var globalMonitor: Any?
     private var localMonitor: Any?
@@ -62,10 +71,14 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
 
     init(presentation: TranslationPresentation = .editor,
          speechSynthesizer: AVSpeechSynthesizer? = nil,
-         speechVoices: @escaping () -> [AVSpeechSynthesisVoice] = AVSpeechSynthesisVoice.speechVoices) {
+         speechVoices: @escaping () -> [AVSpeechSynthesisVoice] = AVSpeechSynthesisVoice.speechVoices,
+         autoTranslationDelay: @escaping () async throws -> Void = {
+             try await Task.sleep(nanoseconds: 600_000_000)
+         }) {
         self.presentation = presentation
         self.speechSynthesizer = speechSynthesizer
         self.speechVoices = speechVoices
+        self.autoTranslationDelay = autoTranslationDelay
         super.init()
     }
 
@@ -103,6 +116,9 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         }
         applyPopupAppearance()
         checkGoogleUsageReminder()
+        let customEnabled = UserDefaults.standard.bool(forKey: DefaultsKey.translationCustomShortcutEnabled)
+        customShortcutUnavailable = !customHotKey.update(shortcut:
+            customEnabled && !recordingShortcut && AXIsProcessTrusted() ? TranslationShortcut.load(from: .standard) : nil)
         guard enabled else {
             stopListening()
             // Unrelated preference writes must not close the manually opened
@@ -143,6 +159,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
 
     func stop() {
         subscriptions.removeAll()
+        _ = customHotKey.update(shortcut: nil)
         stopListening()
         close()
         started = false
@@ -158,7 +175,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
 
     private func observe(_ event: NSEvent) {
         // Ignore our own editor and Settings (which can contain an API-key draft).
-        guard panel?.isKeyWindow != true,
+        guard !selectionCopyInFlight, panel?.isKeyWindow != true,
               NSWorkspace.shared.frontmostApplication?.processIdentifier != ProcessInfo.processInfo.processIdentifier
         else { detector = .init(); firstCopy = nil; return }
         let modifiers = event.modifierFlags.intersection([.command, .control, .option, .shift])
@@ -174,7 +191,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
                 guard let self, self.generation.accepts(token),
                       NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else { return }
                 self.useCopiedText(requiringChangeAfter: observation?.changeCount, requiresFreshCopy: true,
-                                   presentation: .compact)
+                                   presentation: .compact, requiringSourcePID: pid)
             }
         } else if isCopy, !event.isARepeat {
             let observation = CopyObservation()
@@ -278,6 +295,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     }
 
     func close() {
+        cancelAutoTranslation()
         stopSpeech()
         removeDismissMonitors()
         cloudTask?.cancel()
@@ -290,6 +308,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         message = nil
         googleFailure = nil
         copied = false
+        copiedOriginal = false
         copyToken = UUID()
         panel?.orderOut(nil)
         // Release the SwiftUI task/session as well as all sensitive text.
@@ -300,6 +319,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     func windowWillClose(_ notification: Notification) { close() }
 
     func hideForSettings() {
+        cancelAutoTranslation()
         stopSpeech()
         removeDismissMonitors()
         panel?.orderOut(nil)
@@ -363,9 +383,53 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         trackingMenus = 0
     }
 
+    func setRecordingShortcut(_ recording: Bool) {
+        recordingShortcut = recording
+        syncWithPreferences()
+    }
+
+    private func translateSelection() {
+        guard !selectionCopyInFlight, !readInFlight, !busy, AXIsProcessTrusted(),
+              !recordingShortcut,
+              UserDefaults.standard.bool(forKey: DefaultsKey.translationCustomShortcutEnabled),
+              let pid = NSWorkspace.shared.frontmostApplication?.processIdentifier,
+              pid != ProcessInfo.processInfo.processIdentifier else { return }
+        selectionCopyInFlight = true
+        readInFlight = true
+        detector = .init()
+        firstCopy = nil
+        let token = generation.advance()
+        GeneralPasteboardAccess.shared.async(timeout: 0.6, { _ in NSPasteboard.general.changeCount },
+            then: { [weak self] baseline in
+                guard let self else { return }
+                guard let baseline, self.generation.accepts(token), AXIsProcessTrusted(),
+                      UserDefaults.standard.bool(forKey: DefaultsKey.translationCustomShortcutEnabled),
+                      NSWorkspace.shared.frontmostApplication?.processIdentifier == pid,
+                      let down = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(kVK_ANSI_C), keyDown: true),
+                      let up = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(kVK_ANSI_C), keyDown: false)
+                else { self.selectionCopyInFlight = false; return }
+                down.flags = .maskCommand
+                up.flags = .maskCommand
+                // Target the captured app so a focus change cannot copy from another app.
+                down.postToPid(pid)
+                up.postToPid(pid)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) { [weak self] in
+                    guard let self else { return }
+                    self.selectionCopyInFlight = false
+                    guard self.generation.accepts(token), AXIsProcessTrusted(),
+                          UserDefaults.standard.bool(forKey: DefaultsKey.translationCustomShortcutEnabled),
+                          NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else { return }
+                    self.useCopiedText(requiringChangeAfter: baseline, requiresFreshCopy: true,
+                                       presentation: .compact, requiringSourcePID: pid)
+                }
+            }, didFinish: { [weak self] _ in self?.readInFlight = false })
+    }
+
     func useCopiedText(requiringChangeAfter baseline: Int? = nil, requiresFreshCopy: Bool = false,
-                       presentation mode: TranslationPresentation? = nil) {
-        guard !readInFlight else { return }
+                       presentation mode: TranslationPresentation? = nil, requiringSourcePID sourcePID: pid_t? = nil) {
+        guard !readInFlight,
+              sourcePID == nil || NSWorkspace.shared.frontmostApplication?.processIdentifier == sourcePID else { return }
+        cancelAutoTranslation()
         googleFailure = nil
         stopSpeech()
         cloudTask?.cancel()
@@ -390,6 +454,11 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
             catch { return .failure(.empty) }
         }, then: { [weak self] result in
             guard let self, self.generation.accepts(token) else { return }
+            if let sourcePID, NSWorkspace.shared.frontmostApplication?.processIdentifier != sourcePID {
+                self.busy = false
+                self.message = nil
+                return
+            }
             self.open(mode ?? self.presentation)
             self.busy = false
             self.message = nil
@@ -404,6 +473,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     }
 
     func inputDidChange() {
+        cancelAutoTranslation()
         googleFailure = nil
         stopSpeech()
         cloudTask?.cancel()
@@ -414,7 +484,38 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         busy = false
         message = nil
         copied = false
+        copiedOriginal = false
         copyToken = UUID()
+    }
+
+    func editInput(_ value: String) {
+        input = value
+        inputDidChange()
+        scheduleAutoTranslation()
+    }
+
+    func scheduleAutoTranslation() {
+        cancelAutoTranslation()
+        guard !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        let token = generation.current
+        let delay = autoTranslationDelay
+        autoTranslationTask = Task { @MainActor [weak self] in
+            do { try await delay(); try Task.checkCancellation() }
+            catch { return }
+            guard let self, self.generation.accepts(token) else { return }
+            // Wait for Chinese/Japanese input-method composition to be committed.
+            if let editor = NSApp?.keyWindow?.firstResponder as? NSTextView, editor.hasMarkedText() {
+                self.scheduleAutoTranslation()
+                return
+            }
+            self.autoTranslationTask = nil
+            self.translate()
+        }
+    }
+
+    private func cancelAutoTranslation() {
+        autoTranslationTask?.cancel()
+        autoTranslationTask = nil
     }
 
     func setEngine(_ value: TranslationEngine) {
@@ -422,8 +523,8 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         inputDidChange()
         engine = value
         UserDefaults.standard.set(value.rawValue, forKey: DefaultsKey.translationEngine)
-        // Changing engines never silently sends existing text to Google.
-        // A fresh Translate click (or double-copy gesture) is required.
+        // Settings changes alone do not submit existing text to Google.
+        // The translation-window engine picker explicitly schedules a fresh request.
     }
 
     func setSource(_ value: String) {
@@ -447,21 +548,34 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         languagesDidChange()
     }
 
+    private func rememberLanguages() {
+        TranslationRecentLanguages.record(source, forSource: true)
+        TranslationRecentLanguages.record(target, forSource: false)
+        let sources = TranslationRecentLanguages.tabs(forSource: true)
+        let targets = TranslationRecentLanguages.tabs(forSource: false)
+        if sources != recentSourceLanguages { recentSourceLanguages = sources }
+        if targets != recentTargetLanguages { recentTargetLanguages = targets }
+    }
+
     private func languagesDidChange() {
+        rememberLanguages()
         inputDidChange()
         if !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { translate() }
     }
 
     func translate() {
+        cancelAutoTranslation()
         stopSpeech()
         googleFailure = nil
         do { _ = try TranslationTextPlan.validate(input) }
         catch { message = inputMessage(error); return }
+        rememberLanguages()
         cloudTask?.cancel()
         cloudTask = nil
         generation.advance()
         output = ""
         copied = false
+        copiedOriginal = false
         message = nil
         busy = true
         copyToken = UUID()
@@ -488,6 +602,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     }
 
     func cancel() {
+        cancelAutoTranslation()
         stopSpeech()
         googleFailure = nil
         cloudTask?.cancel()
@@ -611,8 +726,17 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     }
 
     func copyOutput() {
-        guard !output.isEmpty else { return }
-        let text = output
+        copyText(output, original: false)
+    }
+
+    func copyOriginal() {
+        copyText(input, original: true)
+    }
+
+    private func copyText(_ text: String, original: Bool) {
+        guard !text.isEmpty else { return }
+        copied = false
+        copiedOriginal = false
         let token = UUID()
         copyToken = token
         // Mark this explicit copy transient so clipboard history doesn't turn
@@ -625,7 +749,8 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
             return NSPasteboard.general.writeObjects([item])
         }, then: { [weak self] result in
             guard let self, self.copyToken == token else { return }
-            self.copied = result == true
+            self.copied = result == true && !original
+            self.copiedOriginal = result == true && original
             if result != true { self.message = self.strings.failed }
         })
     }

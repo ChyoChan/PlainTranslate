@@ -7,7 +7,13 @@ import Combine
 enum DefaultsKey {
     static let appLanguage = "interfaceLanguage"
     static let translationDoubleCopyEnabled = "translationDoubleCopyEnabled"
+    static let translationCustomShortcutEnabled = "translationCustomShortcutEnabled"
+    static let translationShortcut = "translationShortcut"
     static let translationEngine = "translationEngine"
+    static let translationRecentSourceLanguages = "translationRecentSourceLanguages"
+    static let translationRecentTargetLanguages = "translationRecentTargetLanguages"
+    static let translationSourceTabs = "translationSourceTabs"
+    static let translationTargetTabs = "translationTargetTabs"
     static let translationGoogleUsage = "translationGoogleUsage"
     static let translationGoogleUsageReminderEnabled = "translationGoogleUsageReminderEnabled"
     static let translationGoogleUsageReminderMonth = "translationGoogleUsageReminderMonth"
@@ -25,6 +31,7 @@ enum AppPreferences {
     static func registerDefaults(in defaults: UserDefaults = .standard) {
         defaults.register(defaults: [
             DefaultsKey.translationDoubleCopyEnabled: false,
+            DefaultsKey.translationCustomShortcutEnabled: false,
             DefaultsKey.translationEngine: TranslationEngine.apple.rawValue,
             DefaultsKey.translationPopupWidth: TranslationCompactLayout.defaultWidth,
             DefaultsKey.translationPopupFontSize: TranslationCompactLayout.defaultFontSize,

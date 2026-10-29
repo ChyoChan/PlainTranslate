@@ -12,6 +12,8 @@ struct SettingsView: View {
     @ObservedObject private var permissions = Permissions.shared
     @ObservedObject private var navigation = SettingsNavigation.shared
     @AppStorage(DefaultsKey.translationDoubleCopyEnabled) private var doubleCopy = false
+    @AppStorage(DefaultsKey.translationCustomShortcutEnabled) private var customShortcutEnabled = false
+    @State private var shortcut = TranslationShortcut.load(from: .standard)
     @AppStorage(DefaultsKey.translationPDFLineBreakCleanup) private var pdfCleanup = true
     @AppStorage(DefaultsKey.translationPopupWidth) private var popupWidth = TranslationCompactLayout.defaultWidth
     @AppStorage(DefaultsKey.translationPopupFontSize) private var popupFontSize = TranslationCompactLayout.defaultFontSize
@@ -54,7 +56,37 @@ struct SettingsView: View {
                 caption(label(
                     "Off by default so another translator can keep using this shortcut. Enable it in only one app.",
                     "預設關閉，方便與其他翻譯 App 並存。請只在一個 App 啟用此快捷鍵。"))
-                if doubleCopy {
+                Toggle(label("Custom translation shortcut", "自訂翻譯快捷鍵"), isOn: $customShortcutEnabled)
+                    .onChange(of: customShortcutEnabled) { _, _ in
+                        permissions.refresh()
+                        model.syncWithPreferences()
+                    }
+                if customShortcutEnabled {
+                    HStack {
+                        Text(label("Shortcut", "快捷鍵"))
+                        Spacer()
+                        TranslationShortcutRecorder(shortcut: $shortcut, onRecordingChanged: model.setRecordingShortcut)
+                        .frame(width: 180, height: 30)
+                        .onChange(of: shortcut) { _, value in
+                            value.save(to: .standard)
+                            model.syncWithPreferences()
+                        }
+                        Button(label("Reset", "重設")) {
+                            shortcut = .defaultValue
+                        }
+                    }
+                    caption(label(
+                        "Click the shortcut, then press a key with Command, Control or Option. Escape cancels recording. Select text in another app and use this shortcut to copy (⌘C) and translate it with the selected engine. Accessibility access is required.",
+                        "按一下快捷鍵，再按包含 Command、Control 或 Option 的組合鍵；Escape 可取消錄製。在其他 App 選取文字後按此快捷鍵，便會複製（⌘C）並以目前引擎翻譯。需要輔助使用權限。"))
+                    if model.customShortcutUnavailable {
+                        Label(label("This shortcut is unavailable or used by another app. Choose another combination.",
+                                    "此快捷鍵無法使用或已被其他 App 佔用，請選擇其他組合。"),
+                              systemImage: "exclamationmark.triangle")
+                            .font(.callout)
+                            .accessibilityIdentifier("translationShortcutConflict")
+                    }
+                }
+                if doubleCopy || customShortcutEnabled {
                     Label(permissions.accessibility
                           ? label("Accessibility access granted", "已授予輔助使用權限")
                           : text.permission,
@@ -132,15 +164,28 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        ScrollViewReader { proxy in
-            settingsForm
-                .onAppear { focusGoogleCredentials(using: proxy) }
-                .onChange(of: navigation.focusGoogleCredentials) { _, _ in
-                    focusGoogleCredentials(using: proxy)
+        VStack(spacing: 0) {
+            HStack {
+                Button { navigation.returnToTranslation() } label: {
+                    Label(label("Back", "返回"), systemImage: "chevron.left")
                 }
-                .onChange(of: credentials.busy) { _, busy in
-                    if !busy { focusGoogleCredentials(using: proxy) }
-                }
+                .accessibilityLabel(label("Back to translation", "返回翻譯"))
+                .help(label("Back to translation", "返回翻譯"))
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
+            Divider()
+            ScrollViewReader { proxy in
+                settingsForm
+                    .onAppear { focusGoogleCredentials(using: proxy) }
+                    .onChange(of: navigation.focusGoogleCredentials) { _, _ in
+                        focusGoogleCredentials(using: proxy)
+                    }
+                    .onChange(of: credentials.busy) { _, busy in
+                        if !busy { focusGoogleCredentials(using: proxy) }
+                    }
+            }
         }
         .formStyle(.grouped)
         .toggleStyle(.switch)

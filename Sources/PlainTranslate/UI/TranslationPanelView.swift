@@ -10,6 +10,10 @@ struct TranslationPanelView: View {
     @ObservedObject private var l10n = L10n.shared
     private var text: TranslationStrings { TranslationStrings(language: l10n.language) }
     @FocusState private var inputFocused: Bool
+    @Namespace private var languageUnderline
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var hoveredSourceLanguage: String?
+    @State private var hoveredTargetLanguage: String?
     private static let resultAnchor = "translationResultStart"
     @AppStorage(DefaultsKey.translationPopupFontSize) private var popupFontSize = TranslationCompactLayout.defaultFontSize
 
@@ -46,30 +50,22 @@ struct TranslationPanelView: View {
     }
 
     private var enginePicker: some View {
-        Picker(text.engine, selection: Binding(get: { model.engine }, set: { model.setEngine($0) })) {
-            Text("Apple").tag(TranslationEngine.apple)
-            Text("Google").tag(TranslationEngine.google)
-        }
-        .pickerStyle(.menu)
-        .labelsHidden()
-        .controlSize(.small)
-        .font(.caption)
-        .fixedSize()
-        .accessibilityLabel(text.engine)
-        .accessibilityIdentifier("translationEnginePicker")
-        .help(model.privacyNotice)
+        TranslationEngineControl(selection: Binding(get: { model.engine }, set: {
+            model.setEngine($0)
+            model.scheduleAutoTranslation()
+        }), label: text.engine, appleHelp: text.privacy, googleHelp: text.googlePrivacy)
+        .frame(width: 190, height: 28)
     }
 
     private var compactContent: some View {
         VStack(spacing: 10) {
             HStack(spacing: 10) {
                 Image(systemName: "character.bubble").font(.title3).accessibilityHidden(true)
-                languagePicker(text.to, selection: targetSelection, detectsLanguage: false)
-                    .frame(maxWidth: 220)
                 Spacer(minLength: 0)
                 enginePicker
                 closeButton
             }
+            languagePicker(text.to, selection: targetSelection, detectsLanguage: false)
             resultText(compact: true)
                 .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
                 .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(nsColor: .separatorColor)))
@@ -115,8 +111,13 @@ struct TranslationPanelView: View {
                 .help(l10n.language == .en ? "Settings" : "設定")
                 .accessibilityLabel(l10n.language == .en ? "Settings" : "設定")
                 Button { model.open(.compact) } label: {
-                    Label(text.compact, systemImage: "rectangle.compress.vertical")
+                    ViewThatFits(in: .horizontal) {
+                        Label(text.compact, systemImage: "rectangle.compress.vertical")
+                        Image(systemName: "rectangle.compress.vertical")
+                    }
                 }
+                .help(text.compact)
+                .accessibilityLabel(text.compact)
                 closeButton
             }
             .padding(.horizontal, 16)
@@ -139,67 +140,51 @@ struct TranslationPanelView: View {
             Divider()
             HSplitView {
                 VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text(text.source).font(.subheadline.weight(.medium)).foregroundStyle(.primary)
-                            .accessibilityAddTraits(.isHeader)
-                        Spacer(minLength: 0)
-                        speechButton(.original).labelStyle(.iconOnly)
-                    }
-                    ZStack(alignment: .topLeading) {
-                        TextEditor(text: Binding(get: { model.input }, set: {
-                            model.input = $0
-                            model.inputDidChange()
-                        }))
+                    TextEditor(text: Binding(get: { model.input }, set: model.editInput))
                         .font(.system(size: 18))
                         .scrollContentBackground(.hidden)
                         .focused($inputFocused)
                         .accessibilityLabel(text.source)
-                        if model.input.isEmpty {
-                            Text(text.inputPlaceholder)
-                                .font(.system(size: 18))
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, 5).padding(.top, 1)
-                                .allowsHitTesting(false)
-                                .accessibilityHidden(true)
-                        }
-                    }
-                    HStack {
-                        Button(text.paste) { model.useCopiedText() }.disabled(model.busy)
-                        Spacer(minLength: 8)
-                        if model.busy {
-                            Button(text.cancel) { model.cancel() }
-                        } else {
-                            Button(text.translate) { model.translate() }
-                                .buttonStyle(.borderedProminent)
-                                .keyboardShortcut(.return, modifiers: .command)
-                                .disabled(model.input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        }
-                    }
+                    languageActions(.original)
                 }
                 .padding(16)
                 .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
                 VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text(text.result).font(.subheadline.weight(.medium)).foregroundStyle(.primary)
-                            .accessibilityAddTraits(.isHeader)
-                        Spacer(minLength: 0)
-                        speechButton(.translation).labelStyle(.iconOnly)
-                    }
                     resultText(compact: false)
-                    HStack {
-                        Spacer(minLength: 0)
-                        copyButton
-                    }
+                    languageActions(.translation)
                 }
                 .padding(16)
                 .frame(minWidth: 260, maxWidth: .infinity, maxHeight: .infinity)
             }
-            Divider()
-            Text(model.privacyNotice)
-                .font(.caption).foregroundStyle(.primary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16).padding(.vertical, 10)
         }
+    }
+
+    private func languageActions(_ part: TranslationSpeechPart) -> some View {
+        HStack {
+            speechButton(part)
+                .frame(width: 32, height: 32)
+            Spacer(minLength: 8)
+            if part == .original, model.busy {
+                Button(text.cancel) { model.cancel() }.font(.callout)
+                Spacer(minLength: 8)
+            }
+            if part == .original {
+                Button { model.copyOriginal() } label: {
+                    Label(model.copiedOriginal ? text.copied : text.copyOriginal,
+                          systemImage: model.copiedOriginal ? "checkmark" : "doc.on.doc")
+                }
+                .disabled(model.input.isEmpty || model.busy)
+                .help(model.copiedOriginal ? text.copied : text.copyOriginal)
+                .accessibilityLabel(model.copiedOriginal ? text.copied : text.copyOriginal)
+                .accessibilityIdentifier("translationCopyOriginal")
+                .frame(width: 32, height: 32)
+            } else {
+                copyButton.frame(width: 32, height: 32)
+            }
+        }
+        .labelStyle(.iconOnly)
+        .buttonStyle(.borderless)
+        .font(.system(size: 18))
     }
 
     private func speechButton(_ part: TranslationSpeechPart) -> some View {
@@ -226,6 +211,8 @@ struct TranslationPanelView: View {
         }
         .disabled(model.output.isEmpty || model.busy)
         .help(model.copied ? text.copied : text.copy)
+        .accessibilityLabel(model.copied ? text.copied : text.copy)
+        .accessibilityIdentifier("translationCopyResult")
     }
 
     private var closeButton: some View {
@@ -278,7 +265,7 @@ struct TranslationPanelView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .accessibilityIdentifier("translationError")
                         } else {
-                            Text(model.output.isEmpty ? text.waiting : model.output)
+                            Text(model.output.isEmpty ? (compact ? text.waiting : text.title) : model.output)
                                 .font(.system(size: compact ? TranslationCompactLayout.fontSize(popupFontSize) : 18))
                                 .foregroundStyle(model.output.isEmpty ? .secondary : .primary)
                                 .textSelection(.enabled)
@@ -305,8 +292,8 @@ struct TranslationPanelView: View {
             }
             .onPreferenceChange(TranslationResultHeight.self) { height in
                 guard compact, height > 0 else { return }
-                // Header (28), footer (32), spacing (20), padding (24).
-                model.fitCompactContent(height: height + 104)
+                // Header (28), languages (38), footer (32), spacing (30), padding (24).
+                model.fitCompactContent(height: height + 152)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .accessibilityLabel(compact ? text.title : text.result)
@@ -325,19 +312,108 @@ struct TranslationPanelView: View {
     }
 
     private func languagePicker(_ title: String, selection: Binding<String>, detectsLanguage: Bool) -> some View {
-        Picker(title, selection: selection) {
-            if detectsLanguage { Text(text.auto).tag("auto") }
-            ForEach(TranslationLanguageDefaults.languages, id: \.self) { language in
-                Text(languageName(language)).tag(language)
+        let recent = detectsLanguage ? model.recentSourceLanguages : model.recentTargetLanguages
+        let hovered = detectsLanguage ? hoveredSourceLanguage : hoveredTargetLanguage
+        return HStack(spacing: 4) {
+            GeometryReader { geometry in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 0) {
+                        ForEach(recent, id: \.self) { language in
+                            languageTab(language, selection: selection, detectsLanguage: detectsLanguage)
+                        }
+                    }
+                    .frame(minWidth: geometry.size.width)
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: hovered)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: selection.wrappedValue)
+                }
+            }
+            Menu {
+                if detectsLanguage {
+                    languageMenuItem("auto", selection: selection)
+                    Divider()
+                }
+                ForEach(TranslationLanguageDefaults.languages, id: \.self) { language in
+                    languageMenuItem(language, selection: selection)
+                }
+            } label: {
+                Image(systemName: "chevron.down").frame(width: 24, height: 38)
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help(title)
+            .accessibilityLabel(title)
+            .accessibilityValue(languageName(selection.wrappedValue))
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 38)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(title)
+        .onDisappear {
+            if detectsLanguage { hoveredSourceLanguage = nil }
+            else { hoveredTargetLanguage = nil }
+        }
+    }
+
+    private func languageTab(_ language: String, selection: Binding<String>, detectsLanguage: Bool) -> some View {
+        let selected = selection.wrappedValue == language
+        let hovered = (detectsLanguage ? hoveredSourceLanguage : hoveredTargetLanguage) == language
+        return Button { selection.wrappedValue = language } label: {
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
+                Text(languageName(language))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(selected || hovered ? Color.primary : Color.secondary)
+                    .fixedSize()
+                    .padding(.horizontal, 8)
+                    .frame(height: 38)
+                    .overlay(alignment: .bottom) {
+                        if selected {
+                            Rectangle().fill(Color.accentColor)
+                                .frame(height: 2)
+                                .matchedGeometryEffect(id: detectsLanguage ? "sourceUnderline" : "targetUnderline",
+                                                       in: languageUnderline)
+                                .transition(.identity)
+                                .accessibilityHidden(true)
+                        } else if hovered {
+                            Rectangle().fill(Color.secondary)
+                                .frame(height: 2)
+                                .accessibilityHidden(true)
+                        }
+                    }
+                Spacer(minLength: 0)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .background(hovered ? Color.primary.opacity(0.04) : .clear)
+        .onHover { inside in
+            if detectsLanguage {
+                if inside { hoveredSourceLanguage = language }
+                else if hoveredSourceLanguage == language { hoveredSourceLanguage = nil }
+            } else {
+                if inside { hoveredTargetLanguage = language }
+                else if hoveredTargetLanguage == language { hoveredTargetLanguage = nil }
             }
         }
-        .labelsHidden()
-        .accessibilityLabel(title)
-        .frame(maxWidth: .infinity)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityIdentifier("\(detectsLanguage ? "source" : "target")Language-\(language)")
+    }
+
+    private func languageMenuItem(_ language: String, selection: Binding<String>) -> some View {
+        Button { selection.wrappedValue = language } label: {
+            if selection.wrappedValue == language {
+                Label(languageName(language), systemImage: "checkmark")
+            } else {
+                Text(languageName(language))
+            }
+        }
     }
 
     private func languageName(_ identifier: String) -> String {
-        Locale(identifier: l10n.language.rawValue).localizedString(forIdentifier: identifier) ?? identifier
+        identifier == "auto" ? text.auto :
+            (Locale(identifier: l10n.language.rawValue).localizedString(forIdentifier: identifier) ?? identifier)
     }
 }
 

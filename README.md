@@ -26,11 +26,18 @@ Native editor and compact popup, shown with non-sensitive sample text:
 - Optional Google Cloud Translation Basic v2 using **each user's own API key**.
 - English, Traditional Chinese and Japanese; automatic source detection in the
   editor. Default translation: English → Traditional Chinese.
-- Editable original text and translation in a side-by-side window.
+- Editable original text and translation in a side-by-side window, translating
+  automatically after a 0.6-second pause in typing or pasting.
+- Language tabs show the three most recent choices, remembered separately for
+  source and target. The arrow menu keeps all supported choices available.
+  Selecting a visible tab moves the underline without reordering the buttons;
+  their positions are preserved between launches.
 - Compact popup with original above translation, copy/edit controls, adjustable
   width and text size, and outside-click dismissal.
 - Optional double **⌘C** within 0.7 seconds to translate selected copied text.
   Off by default so it does not compete with Vorssaint or another translator.
+- Optional custom shortcut (default **⌃⌥T**): record your own combination in
+  settings to copy and translate selected text in another app.
 - Optional PDF line-break cleanup that preserves blank paragraphs, lists,
   indentation and table-like spacing. This is text cleanup, not PDF file import.
 - Native read-aloud with English, Cantonese, Mandarin and Japanese voice
@@ -84,7 +91,8 @@ that build to Apple's notarization service.
 
 1. Open PlainTranslate from its menu-bar icon.
 2. Keep the engine set to **Apple**.
-3. Type or paste text, choose the languages, and press **Translate** or **⌘Return**.
+3. Choose the languages, then type or paste text. Translation starts automatically
+   after a 0.6-second pause; input-method composition waits until committed.
 4. Allow macOS to download required language models if prompted.
 
 Downloaded models are shared by Apple's Translation framework. Language
@@ -99,7 +107,9 @@ sending text to Google if local translation cannot run.
    review the project's quotas and billing alerts.
 3. In PlainTranslate settings, select **Google Cloud Translation** and save the
    key. The key is stored in your local macOS Keychain.
-4. Choose **Google** in the editor or popup and explicitly request translation.
+4. Choose **Google** in the editor or popup. Editing text automatically translates
+   after a 0.6-second pause; choosing an engine in the translation window also
+   translates existing text. Each submitted Google request may incur charges.
 
 Google requests are sent directly to the official API and are billed to your
 project under Google's current terms. PlainTranslate provides no shared quota.
@@ -127,6 +137,15 @@ If another translator also uses double ⌘C, enable that shortcut in only one ap
 to avoid two popups. PlainTranslate does not change the other app's settings.
 Manual typing/pasting works without Accessibility permission. Selecting Google
 means a triggered translation sends the selected text to Google.
+
+Alternatively, enable **Custom translation shortcut** in settings. Click the
+shortcut button and press a key with Command, Control or Option; Escape cancels
+recording. The default is **Control–Option–T**. Select text in another app and
+press your shortcut. PlainTranslate sends that app a Copy command, then translates
+only freshly copied, unprotected text with the currently selected engine.
+Accessibility permission is required. If another app already uses the combination,
+settings shows a conflict so you can choose a different one. Both shortcut options
+are off by default and can be enabled independently.
 
 ## Tests
 
@@ -168,7 +187,7 @@ PlainTranslate 是獨立的 Mac 翻譯 App，不會修改 Vorssaint。
 1. 依照上方指令建置，開啟 `build/PlainTranslate.app`。
 2. 預設使用 Apple 本機翻譯；首次使用某些語言時，按系統提示下載語言模型。
 3. 如需 Google 翻譯，在設定選擇 Google，儲存你自己的 Cloud Translation API key。
-4. 在編輯視窗貼上文字，按「翻譯」；可用「精簡視窗」顯示原文與譯文彈窗。
+4. 在編輯視窗輸入或貼上文字，停止輸入約 0.6 秒後自動翻譯；可用「精簡視窗」顯示原文與譯文彈窗。
 5. 雙按 ⌘C 預設關閉；如需使用，在設定啟用並授予「輔助使用」權限。
 6. Google 用量僅為這個 App 的本機估算，實際額度及費用請查看自己的 GCP 專案。
 

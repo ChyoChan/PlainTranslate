@@ -37,6 +37,12 @@ final class SettingsNavigation: NSObject, ObservableObject, NSWindowDelegate {
         window?.makeKeyAndOrderFront(nil)
     }
 
+    func returnToTranslation() {
+        precondition(Thread.isMainThread)
+        window?.close()
+        TranslationService.shared.open(TranslationService.shared.presentation)
+    }
+
     func windowWillClose(_ notification: Notification) {
         guard notification.object as? NSWindow === window else { return }
         focusGoogleCredentials = false

@@ -14,10 +14,15 @@ silently fall back to Google when local translation is unavailable.
 ## Google Cloud translation
 
 Google is optional and requires your own Cloud Translation API key. When you
-select Google and request a translation, PlainTranslate sends the prepared input
+select Google and type or paste text in the editor, PlainTranslate automatically
+translates after a 0.6-second pause. Choosing an engine in the translation window
+also submits the existing text. PlainTranslate sends the prepared input
 text, source language (unless automatic), and target language directly to the
 official Google Cloud Translation Basic v2 HTTPS endpoint. If PDF cleanup is
 enabled, the submitted text includes that cleanup.
+
+Continuing to type cancels pending work and ignores outdated results. A request
+already submitted to Google may still be billed even if it is cancelled.
 
 - Your key is kept in your local macOS Keychain, under the independent service
   `com.chyo.plaintranslate.translation.google`.
@@ -50,7 +55,7 @@ utilities may read.
 
 ## Local settings and usage estimates
 
-The app saves interface preferences, selected engine, speech preferences,
+The app saves interface preferences, selected engine, recent source/target language choices, speech preferences,
 aggregate monthly Google submission counters, and whether a usage reminder has
 been shown. It does not persist the translation input or result.
 
