@@ -61,7 +61,7 @@ been shown. It does not persist the translation input or result.
 
 Monthly counters use the Hong Kong calendar month. They count submitted Unicode
 code points, including whitespace, and submission attempts. Failed requests or
-requests cancelled after submission remain in the estimate; explicit retries
+requests cancelled after submission remain in the estimate; uncached retries
 count again. Apple translations do not count.
 
 These counters only cover this installation of PlainTranslate since counting
@@ -83,3 +83,14 @@ Removing the app does not automatically revoke a Google API key or delete a
 Keychain item. Use **Remove key** in the app before uninstalling if you want the
 saved credential removed, and revoke the key in Google Cloud if no longer needed.
 PlainTranslate's bundle identity and settings are separate from Vorssaint.
+
+## Temporary translation cache
+
+Up to 20 successful translations are retained only in process memory, within a
+500,000-byte UTF-8 budget. A hit requires the same prepared text, source language,
+target language and engine. Failed, empty, cancelled and outdated results are not
+cached. Closing the popup retains this bounded cache for reuse during the app
+session. Settings → Translation cache → Clear cache removes it; quitting, locking
+the session, or saving/removing the Google key also clears it. Each app has its
+own cache. No cache file, translation history or synchronization is created.
+Cache hits submit nothing to Google and do not increase submission estimates.

@@ -55,6 +55,8 @@ final class InterfaceTests: XCTestCase {
             compactModel.finish(compactRequest.id, result: .success("早安。"))
             try render(TranslationPanelView(model: compactModel).environment(\.colorScheme, scheme),
                        size: NSSize(width: 630, height: 390), name: "compact-short-\(language.rawValue)-\(scheme)", directory: directory)
+            // Seed the error state with a fresh request rather than a successful cache hit.
+            compactModel.clearTranslationCache()
             compactModel.translate()
             let failedRequest = try XCTUnwrap(compactModel.request)
             compactModel.finish(failedRequest.id, result: .failure(TranslationUnsupportedPair()))

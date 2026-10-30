@@ -40,6 +40,11 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         guard let googleFailure else { return false }
         return [.missingKey, .invalidKey, .denied].contains(googleFailure)
     }
+    @Published private(set) var cachedTranslationCount = 0
+    private var resultCache = TranslationResultCache()
+    private var cacheGeneration = UUID()
+    private var requestCacheGeneration: UUID?
+    private let googleTranslation: (TranslationRequest) async throws -> String
     private var cloudTask: Task<Void, Never>?
     private var autoTranslationTask: Task<Void, Never>?
     private let autoTranslationDelay: () async throws -> Void
@@ -69,10 +74,12 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     private var strings: TranslationStrings { TranslationStrings(language: L10n.shared.language) }
 
     init(presentation: TranslationPresentation = .editor,
+         googleTranslation: @escaping (TranslationRequest) async throws -> String = TranslationService.translateWithGoogle,
          autoTranslationDelay: @escaping () async throws -> Void = {
              try await Task.sleep(nanoseconds: 600_000_000)
          }) {
         self.presentation = presentation
+        self.googleTranslation = googleTranslation
         self.autoTranslationDelay = autoTranslationDelay
         super.init()
     }
@@ -87,7 +94,13 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
             .receive(on: DispatchQueue.main).sink { [weak self] _ in self?.syncWithPreferences() }
             .store(in: &subscriptions)
         NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.sessionDidResignActiveNotification)
-            .receive(on: DispatchQueue.main).sink { [weak self] _ in self?.close() }
+            .receive(on: DispatchQueue.main).sink { [weak self] _ in
+                self?.clearTranslationCache()
+                self?.close()
+            }
+            .store(in: &subscriptions)
+        NotificationCenter.default.publisher(for: .translationCredentialsDidChange)
+            .receive(on: DispatchQueue.main).sink { [weak self] _ in self?.googleCredentialsDidChange() }
             .store(in: &subscriptions)
         syncWithPreferences()
     }
@@ -153,6 +166,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     }
 
     func stop() {
+        clearTranslationCache()
         subscriptions.removeAll()
         _ = customHotKey.update(shortcut: nil)
         stopListening()
@@ -306,7 +320,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         copiedOriginal = false
         copyToken = UUID()
         panel?.orderOut(nil)
-        // Release the SwiftUI task/session as well as all sensitive text.
+        // Release visible text and the engine session; bounded cache entries live until purge or exit.
         panel?.contentView = nil
         panel = nil
     }
@@ -578,22 +592,45 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
             UserDefaults.standard.bool(forKey: DefaultsKey.translationPDFLineBreakCleanup))
         let pending = TranslationRequest(text: prepared, source: source == "auto" ? nil : source,
                                          target: target, engine: engine)
+        if let cached = resultCache.value(for: pending) {
+            request = nil
+            output = cached
+            busy = false
+            return
+        }
+        requestCacheGeneration = cacheGeneration
         request = pending
         guard engine == .google else { return }
         cloudTask = Task { @MainActor [weak self] in
             do {
-                let key = try await Task.detached { try TranslationKeychain().load() }.value
                 try Task.checkCancellation()
                 guard let self, self.request?.id == pending.id else { return }
-                guard let key else { throw GoogleTranslationError.missingKey }
-                let client = GoogleTranslationClient()
-                let translated = try await client.translate(pending, key: key)
+                let translated = try await self.googleTranslation(pending)
                 try Task.checkCancellation()
                 self.finish(pending.id, result: .success(translated))
             } catch {
                 self?.finish(pending.id, result: .failure(error))
             }
         }
+    }
+
+    static func translateWithGoogle(_ pending: TranslationRequest) async throws -> String {
+        let key = try await Task.detached { try TranslationKeychain().load() }.value
+        try Task.checkCancellation()
+        guard let key else { throw GoogleTranslationError.missingKey }
+        return try await GoogleTranslationClient().translate(pending, key: key)
+    }
+
+    func clearTranslationCache() {
+        resultCache.removeAll()
+        cachedTranslationCount = 0
+        // A result already in flight must not refill an explicitly cleared cache.
+        cacheGeneration = UUID()
+    }
+
+    func googleCredentialsDidChange() {
+        if request?.engine == .google { cancel() }
+        clearTranslationCache()
     }
 
     func cancel() {
@@ -609,12 +646,18 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     }
 
     func finish(_ id: UUID, result: Result<String, Error>) {
-        guard request?.id == id else { return }
+        guard let pending = request, pending.id == id else { return }
         googleFailure = nil
         cloudTask = nil
         busy = false
         switch result {
-        case .success(let text): output = text; message = nil
+        case .success(let text):
+            output = text
+            message = nil
+            if requestCacheGeneration == cacheGeneration {
+                resultCache.insert(text, for: pending)
+                cachedTranslationCount = resultCache.count
+            }
         case .failure(let error):
             if error is CancellationError { message = nil }
             else if error is TranslationUnsupportedPair { message = strings.unsupported }

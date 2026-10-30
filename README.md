@@ -44,6 +44,7 @@ Native editor and compact popup, shown with non-sensitive sample text:
   indentation and table-like spacing. This is text cleanup, not PDF file import.
 - Native read-aloud with English, Cantonese, Mandarin and Japanese voice
   preferences and adjustable speech rate.
+- Session-only translation cache: up to 20 successful results within a 500 KB UTF-8 budget, keyed by prepared text, source, target and engine. Cache hits make no engine request and add no Google usage. Clear it in Settings; locking the session, changing the saved key or quitting also clears it.
 - Local monthly Google submission estimate and a 90% reference-allowance reminder.
 - English and Chinese interface text with native light/dark appearance.
 

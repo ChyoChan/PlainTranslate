@@ -137,6 +137,16 @@ struct SettingsView: View {
                 Toggle(text.pdfLineBreakCleanup, isOn: $pdfCleanup)
                 caption(text.pdfLineBreakCleanupCaption)
             }
+            Section(text.cacheTitle) {
+                HStack {
+                    Text(text.cacheCount(model.cachedTranslationCount))
+                    Spacer()
+                    Button(text.clearCache) { model.clearTranslationCache() }
+                        .disabled(model.cachedTranslationCount == 0)
+                        .accessibilityIdentifier("clearTranslationCache")
+                }
+                caption(text.cacheCaption)
+            }
             Section(text.speechOptions) {
                 Picker(text.chineseVoice, selection: $chineseVoice) {
                     Text(text.cantonese).tag("yue-HK")
