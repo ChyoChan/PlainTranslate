@@ -45,15 +45,7 @@ enum AssistiveKeyboard {
     /// click on that window. Fully transparent layers are skipped, since a
     /// click passes straight through them.
     static func ownsPoint(_ point: CGPoint) -> Bool {
-        ownsPoint(point, keyboardPID: currentPID, windows: onScreenWindows)
-    }
-
-    // Keep the system reads at the decision point. Supplying them separately
-    // lets the same path exercise first use and process changes without UI.
-    static func ownsPoint(_ point: CGPoint,
-                          keyboardPID: () -> pid_t?,
-                          windows: () -> [[String: Any]]?) -> Bool {
-        guard let pid = keyboardPID(), let windows = windows() else { return false }
+        guard let pid = currentPID(), let windows = onScreenWindows() else { return false }
 
         // Front to back: the first window that could have taken the click is
         // the one that did.
@@ -69,20 +61,9 @@ enum AssistiveKeyboard {
             if let alpha = window[kCGWindowAlpha as String] as? CGFloat, alpha <= 0 { continue }
             let owner = window[kCGWindowOwnerPID as String] as? pid_t
             if owner == pid { return true }
-            // Our own windows never block the answer. Several are click-through
-            // (`ignoresMouseEvents`), and `CGWindowListCopyWindowInfo` cannot
-            // report that; they also leave `alphaValue` alone, so they arrive
-            // here looking like ordinary opaque windows. One of them is
-            // full-screen at shielding level for as long as Extra Brightness is
-            // boosting, which would put it above every point of the display and
-            // make this answer false everywhere — every call site silently back
-            // to the bug it fixes.
-            //
-            // The trade: one of our windows that *does* take clicks, overlapping
-            // the keyboard, now reads as a keystroke. That is a false positive —
-            // a buffer that survives, a panel that stays open — against a false
-            // negative that disables the feature outright. The rarer and milder
-            // of the two.
+            // CoreGraphics cannot identify our click-through windows. Skipping
+            // them may keep the popup open under a clickable app window, but
+            // avoids dismissing it during an Accessibility Keyboard interaction.
             if owner == ProcessInfo.processInfo.processIdentifier { continue }
             return false
         }

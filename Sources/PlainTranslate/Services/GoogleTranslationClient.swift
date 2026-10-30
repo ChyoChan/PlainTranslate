@@ -57,12 +57,9 @@ final class GoogleTranslationClient {
 
     static func languageCode(_ identifier: String) -> String { identifier == "zh-Hant" ? "zh-TW" : identifier }
 
-    static func makeRequest(texts: [String], source: String?, target: String, key: String) throws -> URLRequest {
+    static func makeRequest(text: String, source: String?, target: String, key: String) throws -> URLRequest {
         let key = try TranslationAPIKey.normalized(key)
-        guard texts.count == 1 else {
-            throw GoogleTranslationError.invalidRequest
-        }
-        var body: [String: Any] = ["q": texts, "target": languageCode(target), "format": "text", "model": "nmt"]
+        var body: [String: Any] = ["q": [text], "target": languageCode(target), "format": "text", "model": "nmt"]
         if let source { body["source"] = languageCode(source) }
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
@@ -81,38 +78,34 @@ final class GoogleTranslationClient {
         guard request.text.unicodeScalars.count <= TranslationTextPlan.maximumCharacters else {
             throw TranslationInputError.tooLong
         }
-        let key = try TranslationAPIKey.normalized(key)
-        func translateWholeSelection() async throws -> String {
-            try Task.checkCancellation()
-            let http = try Self.makeRequest(texts: [request.text], source: request.source,
-                                            target: request.target, key: key)
-            let data: Data
-            let response: HTTPURLResponse
-            try Task.checkCancellation()
-            recordUsage(request.text.unicodeScalars.count)
-            do { (data, response) = try await transport(http) }
-            catch let error as URLError {
-                if error.code == .cancelled { throw CancellationError() }
-                throw GoogleTranslationError.network
-            }
-            try Task.checkCancellation()
-            switch response.statusCode {
-            case 200: break
-            case 400: throw GoogleTranslationError.invalidRequest
-            case 401: throw GoogleTranslationError.invalidKey
-            case 403: throw GoogleTranslationError.denied
-            case 429: throw GoogleTranslationError.quota
-            case 500...599: throw GoogleTranslationError.unavailable
-            default: throw GoogleTranslationError.invalidResponse
-            }
-            guard data.count <= 2_000_000,
-                  let decoded = try? JSONDecoder().decode(Response.self, from: data),
-                  decoded.data.translations.count == 1 else {
-                throw GoogleTranslationError.invalidResponse
-            }
-            return Self.decodeEntities(decoded.data.translations[0].translatedText)
+        try Task.checkCancellation()
+        let http = try Self.makeRequest(text: request.text, source: request.source,
+                                       target: request.target, key: key)
+        let data: Data
+        let response: HTTPURLResponse
+        try Task.checkCancellation()
+        recordUsage(request.text.unicodeScalars.count)
+        do { (data, response) = try await transport(http) }
+        catch let error as URLError {
+            if error.code == .cancelled { throw CancellationError() }
+            throw GoogleTranslationError.network
         }
-        let result = try await translateWholeSelection()
+        try Task.checkCancellation()
+        switch response.statusCode {
+        case 200: break
+        case 400: throw GoogleTranslationError.invalidRequest
+        case 401: throw GoogleTranslationError.invalidKey
+        case 403: throw GoogleTranslationError.denied
+        case 429: throw GoogleTranslationError.quota
+        case 500...599: throw GoogleTranslationError.unavailable
+        default: throw GoogleTranslationError.invalidResponse
+        }
+        guard data.count <= 2_000_000,
+              let decoded = try? JSONDecoder().decode(Response.self, from: data),
+              decoded.data.translations.count == 1 else {
+            throw GoogleTranslationError.invalidResponse
+        }
+        let result = Self.decodeEntities(decoded.data.translations[0].translatedText)
         try Task.checkCancellation()
         return result
     }

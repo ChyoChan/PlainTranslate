@@ -44,7 +44,6 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     private var autoTranslationTask: Task<Void, Never>?
     private let autoTranslationDelay: () async throws -> Void
     private var speechSynthesizer: AVSpeechSynthesizer?
-    private let speechVoices: () -> [AVSpeechSynthesisVoice]
     private var speechUtterance: AVSpeechUtterance?
     private var chineseVoice = TranslationSpeechLanguage.chineseVoice(
         UserDefaults.standard.string(forKey: DefaultsKey.translationChineseVoice))
@@ -70,14 +69,10 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     private var strings: TranslationStrings { TranslationStrings(language: L10n.shared.language) }
 
     init(presentation: TranslationPresentation = .editor,
-         speechSynthesizer: AVSpeechSynthesizer? = nil,
-         speechVoices: @escaping () -> [AVSpeechSynthesisVoice] = AVSpeechSynthesisVoice.speechVoices,
          autoTranslationDelay: @escaping () async throws -> Void = {
              try await Task.sleep(nanoseconds: 600_000_000)
          }) {
         self.presentation = presentation
-        self.speechSynthesizer = speechSynthesizer
-        self.speechVoices = speechVoices
         self.autoTranslationDelay = autoTranslationDelay
         super.init()
     }
@@ -196,7 +191,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         } else if isCopy, !event.isARepeat {
             let observation = CopyObservation()
             firstCopy = observation
-            GeneralPasteboardAccess.shared.async(timeout: 0.6, { _ in NSPasteboard.general.changeCount },
+            GeneralPasteboardAccess.shared.async(timeout: 0.6, { NSPasteboard.general.changeCount },
                 then: { count in observation.changeCount = count })
         } else if !isCopy {
             firstCopy = nil
@@ -399,7 +394,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         detector = .init()
         firstCopy = nil
         let token = generation.advance()
-        GeneralPasteboardAccess.shared.async(timeout: 0.6, { _ in NSPasteboard.general.changeCount },
+        GeneralPasteboardAccess.shared.async(timeout: 0.6, { NSPasteboard.general.changeCount },
             then: { [weak self] baseline in
                 guard let self else { return }
                 guard let baseline, self.generation.accepts(token), AXIsProcessTrusted(),
@@ -440,7 +435,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         message = strings.reading
         output = ""
         readInFlight = true
-        GeneralPasteboardAccess.shared.async(timeout: 1.0, { _ -> Result<String, TranslationInputError>? in
+        GeneralPasteboardAccess.shared.async(timeout: 1.0, { () -> Result<String, TranslationInputError>? in
             let pasteboard = NSPasteboard.general
             guard !requiresFreshCopy || TranslationTextPlan.isFreshCopy(baseline: baseline, current: pasteboard.changeCount)
             else { return .failure(.empty) }
@@ -678,7 +673,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     }
 
     private func usableSpeechVoices() -> [AVSpeechSynthesisVoice] {
-        speechVoices().filter {
+        AVSpeechSynthesisVoice.speechVoices().filter {
             !$0.voiceTraits.contains(.isNoveltyVoice) && !$0.voiceTraits.contains(.isPersonalVoice)
         }.sorted { $0.quality.rawValue > $1.quality.rawValue }
     }
@@ -741,7 +736,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         copyToken = token
         // Mark this explicit copy transient so clipboard history doesn't turn
         // the translator into a persistent history through a second feature.
-        GeneralPasteboardAccess.shared.async(timeout: 1.0, { _ -> Bool? in
+        GeneralPasteboardAccess.shared.async(timeout: 1.0, { () -> Bool? in
             let item = NSPasteboardItem()
             item.setString(text, forType: .string)
             item.setData(Data(), forType: NSPasteboard.PasteboardType("org.nspasteboard.TransientType"))

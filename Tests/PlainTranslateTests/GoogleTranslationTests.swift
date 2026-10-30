@@ -13,10 +13,9 @@ final class GoogleTranslationTests: XCTestCase {
         XCTAssertEqual(try TranslationAPIKey.normalized("  fixture_key-123\n"), "fixture_key-123")
         for value in ["", " \n", "key with spaces", "key\r\nInjected: value", "金鑰", String(repeating: "x", count: 257)] {
             XCTAssertThrowsError(try TranslationAPIKey.normalized(value))
+            XCTAssertThrowsError(try GoogleTranslationClient.makeRequest(text: "Hello", source: nil, target: "ja", key: value))
         }
-        XCTAssertThrowsError(try GoogleTranslationClient.makeRequest(texts: [], source: nil, target: "ja", key: fakeKey))
-        XCTAssertThrowsError(try GoogleTranslationClient.makeRequest(texts: ["one", "two"], source: nil, target: "ja", key: fakeKey))
-        let http = try GoogleTranslationClient.makeRequest(texts: ["Hello"], source: nil, target: "zh-Hant", key: fakeKey)
+        let http = try GoogleTranslationClient.makeRequest(text: "Hello", source: nil, target: "zh-Hant", key: " \(fakeKey)\n")
         let body = try XCTUnwrap(try JSONSerialization.jsonObject(with: XCTUnwrap(http.httpBody)) as? [String: Any])
         XCTAssertEqual(http.url, GoogleTranslationClient.endpoint)
         XCTAssertEqual(http.url?.scheme, "https")

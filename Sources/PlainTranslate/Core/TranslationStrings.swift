@@ -47,7 +47,6 @@ struct TranslationStrings {
     var copy: String { t("Copy translation", "複製譯文", "复制译文") }
     var copyOriginal: String { t("Copy original", "複製原文", "复制原文") }
     var copied: String { t("Copied", "已複製", "已复制") }
-    var paste: String { t("Use copied text", "使用已複製文字", "使用已复制文字") }
     var speakOriginal: String { t("Read original", "朗讀原文", "朗读原文") }
     var speakTranslation: String { t("Read translation", "朗讀譯文", "朗读译文") }
     var stopSpeech: String { t("Stop reading", "停止朗讀", "停止朗读") }
@@ -102,7 +101,6 @@ struct TranslationStrings {
     var expand: String { t("Expand to edit", "展開編輯", "展开编辑") }
     var compact: String { t("Compact view", "精簡檢視", "精简视图") }
     var swap: String { t("Swap languages", "交換語言", "交换语言") }
-    var inputPlaceholder: String { t("Type or paste text to translate", "輸入或貼上要翻譯的文字", "输入或粘贴要翻译的文字") }
     var localEngine: String { t("Apple on-device translation", "Apple 本機翻譯", "Apple 本地翻译") }
     var engine: String { t("Translation engine", "翻譯引擎", "翻译引擎") }
     var googleEngine: String { "Google Cloud Translation" }

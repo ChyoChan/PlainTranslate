@@ -13,26 +13,9 @@ import Foundation
 final class GeneralPasteboardAccess {
     static let shared = GeneralPasteboardAccess()
 
-    typealias DeadlineScheduler = (_ delay: TimeInterval,
-                                   _ action: @escaping () -> Void) -> (() -> Void)
+    private let queue = DispatchQueue(label: "PlainTranslate.Pasteboard.general", qos: .utility)
 
-    private let queue: DispatchQueue
-    private let now: () -> TimeInterval
-    private let scheduleDeadline: DeadlineScheduler
-
-    init(label: String = "PlainTranslate.Pasteboard.general",
-         now: @escaping () -> TimeInterval = {
-             TimeInterval(DispatchTime.now().uptimeNanoseconds) / 1_000_000_000
-         },
-         scheduleDeadline: DeadlineScheduler? = nil) {
-        queue = DispatchQueue(label: label, qos: .utility)
-        self.now = now
-        self.scheduleDeadline = scheduleDeadline ?? { delay, action in
-            let item = DispatchWorkItem(block: action)
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: item)
-            return { item.cancel() }
-        }
-    }
+    private init() {}
 
     /// A deadline limits result delivery and prevents expired queued work
     /// from starting. It cannot interrupt an AppKit call already in progress.
@@ -40,19 +23,19 @@ final class GeneralPasteboardAccess {
     /// even if `completion` already received nil at the deadline. Callers use
     /// it to keep admission bounded while a provider is unresponsive.
     func async<T>(timeout: TimeInterval,
-                   _ work: @escaping (_ isExpired: () -> Bool) -> T?,
+                   _ work: @escaping () -> T?,
                    then completion: @escaping (T?) -> Void,
                    didFinish: @escaping (T?) -> Void = { _ in }) {
-        let deadline = now() + timeout
+        let deadline = DispatchTime.now() + timeout
         let delivery = PasteboardResultDelivery(completion)
-        let cancelDeadline = scheduleDeadline(timeout) { delivery.complete(nil) }
+        let timeoutWork = DispatchWorkItem { delivery.complete(nil) }
+        DispatchQueue.main.asyncAfter(deadline: deadline, execute: timeoutWork)
         queue.async {
-            let isExpired = { self.now() >= deadline }
-            let value = isExpired() ? nil : work(isExpired)
+            let value = DispatchTime.now() >= deadline ? nil : work()
             DispatchQueue.main.async {
-                cancelDeadline()
+                timeoutWork.cancel()
                 didFinish(value)
-                delivery.complete(isExpired() ? nil : value)
+                delivery.complete(DispatchTime.now() >= deadline ? nil : value)
             }
         }
     }
