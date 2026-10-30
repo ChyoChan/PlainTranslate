@@ -147,6 +147,7 @@ struct SettingsView: View {
                 }
                 caption(text.cacheCaption)
             }
+            ReleaseUpdateSection()
             Section(text.speechOptions) {
                 Picker(text.chineseVoice, selection: $chineseVoice) {
                     Text(text.cantonese).tag("yue-HK")

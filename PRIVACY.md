@@ -94,3 +94,11 @@ session. Settings → Translation cache → Clear cache removes it; quitting, lo
 the session, or saving/removing the Google key also clears it. Each app has its
 own cache. No cache file, translation history or synchronization is created.
 Cache hits submit nothing to Google and do not increase submission estimates.
+
+## Version checks
+
+Settings → Check for updates contacts GitHub only when you click Check now. The
+request goes to this project's public release feed, without your translation
+text, API key or GitHub credentials. GitHub receives ordinary connection metadata,
+including your IP address. Preview releases are included. Release information
+stays in memory; download links open GitHub, and installation remains manual.

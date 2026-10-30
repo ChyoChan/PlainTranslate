@@ -63,6 +63,8 @@ final class InterfaceTests: XCTestCase {
             try render(TranslationPanelView(model: compactModel).environment(\.colorScheme, scheme),
                        size: NSSize(width: 400, height: 520), name: "compact-error-\(language.rawValue)-\(scheme)", directory: directory)
             compactModel.close()
+            try render(Form { ReleaseUpdateSection(model: ReleaseUpdateService(currentVersion: "0.1.3", client: GitHubReleaseClient(repository: "ChyoChan/PlainTranslate"))) }.formStyle(.grouped).environment(\.colorScheme, scheme),
+                       size: NSSize(width: 680, height: 420), name: "published-updates-\(language.rawValue)-\(scheme)", directory: directory)
             try render(SettingsView(inspectCredentials: false).environment(\.colorScheme, scheme),
                        size: NSSize(width: 680, height: 680), name: "settings-\(language.rawValue)-\(scheme)", directory: directory)
         }
