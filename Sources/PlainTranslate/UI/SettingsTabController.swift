@@ -32,8 +32,9 @@ final class SettingsTabController: NSTabViewController {
         }
         selectedTabViewItemIndex = SettingsPane.allCases.firstIndex(of: navigation.selectedPane) ?? 0
         ready = true
-        L10n.shared.$language.receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.updateLabels() }
+        // @Published emits before storage changes; use the UI event's new value.
+        L10n.shared.$language
+            .sink { [weak self] language in self?.updateLabels(for: language) }
             .store(in: &subscriptions)
     }
 
@@ -58,7 +59,7 @@ final class SettingsTabController: NSTabViewController {
         window.toolbar?.autosavesConfiguration = false
         window.toolbar?.displayMode = .iconAndLabel
         window.toolbar?.isVisible = true
-        updateLabels()
+        updateLabels(for: L10n.shared.language)
     }
 
     override func tabView(_ tabView: NSTabView, didSelect tabViewItem: NSTabViewItem?) {
@@ -66,7 +67,7 @@ final class SettingsTabController: NSTabViewController {
         guard ready, let identifier = tabViewItem?.identifier as? String,
               let pane = SettingsPane(rawValue: identifier) else { return }
         navigation?.selectPane(pane)
-        updateLabels()
+        updateLabels(for: L10n.shared.language)
     }
 
     override func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
@@ -84,22 +85,23 @@ final class SettingsTabController: NSTabViewController {
                                  willBeInsertedIntoToolbar: flag)
         }
         let item = NSToolbarItem(itemIdentifier: itemIdentifier)
-        item.label = backTitle
-        item.paletteLabel = backTitle
-        item.toolTip = backTitle
-        item.image = NSImage(systemSymbolName: "chevron.left", accessibilityDescription: backTitle)
+        let title = backTitle(for: L10n.shared.language)
+        item.label = title
+        item.paletteLabel = title
+        item.toolTip = title
+        item.image = NSImage(systemSymbolName: "chevron.left", accessibilityDescription: title)
         item.target = self
         item.action = #selector(returnToTranslation)
         item.visibilityPriority = .high
         return item
     }
 
-    private var backTitle: String {
-        L10n.shared.language == .en ? "Back to translation" : "返回翻譯"
+    private func backTitle(for language: AppLanguage) -> String {
+        language == .en ? "Back to translation" : "返回翻譯"
     }
 
-    private func updateLabels() {
-        let language = L10n.shared.language
+    private func updateLabels(for language: AppLanguage) {
+        precondition(Thread.isMainThread)
         for (pane, item) in zip(SettingsPane.allCases, tabViewItems) {
             item.label = pane.title(for: language)
             item.toolTip = item.label
@@ -111,10 +113,11 @@ final class SettingsTabController: NSTabViewController {
             ? SettingsPane.allCases[selectedTabViewItemIndex] : .translation
         window.title = "PlainTranslate · \(pane.title(for: language))"
         if let back = window.toolbar?.items.first(where: { $0.itemIdentifier == Self.backIdentifier }) {
-            back.label = backTitle
-            back.paletteLabel = backTitle
-            back.toolTip = backTitle
-            back.image = NSImage(systemSymbolName: "chevron.left", accessibilityDescription: backTitle)
+            let title = backTitle(for: language)
+            back.label = title
+            back.paletteLabel = title
+            back.toolTip = title
+            back.image = NSImage(systemSymbolName: "chevron.left", accessibilityDescription: title)
         }
     }
 

@@ -68,12 +68,19 @@ final class SettingsNavigationTests: XCTestCase {
         XCTAssertEqual(SettingsNavigation(defaults: defaults).selectedPane, .appearance)
         XCTAssertTrue(window.title.contains(SettingsPane.appearance.title(for: .en)))
         L10n.shared.setLanguage(.zhHK)
-        settle()
+        // AppKit chrome must update without draining the main dispatch queue.
+        XCTAssertEqual(L10n.shared.language, .zhHK)
         XCTAssertTrue(window.title.contains(SettingsPane.appearance.title(for: .zhHK)))
         let toolbar = try XCTUnwrap(window.toolbar)
         let back = try XCTUnwrap(toolbar.items.first { $0.itemIdentifier.rawValue == "settings.back" })
         XCTAssertTrue(back.label.contains("返回"))
         XCTAssertTrue(back.label.contains("翻譯"))
+        XCTAssertEqual(controller.tabViewItems.first?.label, "翻譯")
+        L10n.shared.setLanguage(.en)
+        XCTAssertTrue(window.title.contains(SettingsPane.appearance.title(for: .en)))
+        XCTAssertEqual(window.toolbar?.items.first { $0.itemIdentifier.rawValue == "settings.back" }?.label,
+                       "Back to translation")
+        XCTAssertEqual(controller.tabViewItems.first?.label, "Translation")
         XCTAssertFalse(window.isVisible)
         for language in [AppLanguage.en, .zhHK, .zhTW] {
             XCTAssertEqual(Set(SettingsPane.allCases.map { $0.title(for: language) }).count, 6)
