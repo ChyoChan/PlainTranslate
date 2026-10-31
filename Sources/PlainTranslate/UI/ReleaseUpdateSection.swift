@@ -30,7 +30,7 @@ struct ReleaseUpdateSection: View {
             }
             if let release = model.release {
                 Label(model.hasNewerVersion ? t("New version available: \(release.tag)", "有新版本：\(release.tag)") :
-                          t("No newer published version", "未有較新的已發佈版本"),
+                          t("No newer release", "未有較新版本"),
                       systemImage: model.hasNewerVersion ? "arrow.down.circle" : "checkmark.circle")
                     .accessibilityIdentifier("publishedReleaseStatus")
                 if release.preview { Text(t("Preview release", "預覽版本")).font(.caption).foregroundStyle(.secondary) }
@@ -52,8 +52,8 @@ struct ReleaseUpdateSection: View {
                 }.font(.caption).foregroundStyle(.secondary)
             }
             Link(t("All releases on GitHub", "GitHub 所有版本"), destination: model.client.releasesURL)
-            Text(t("Checks this project's GitHub releases, including previews. Downloads and installation are manual. Unpublished commits are not releases.",
-                   "檢查此專案的 GitHub 發佈版本，包含預覽版。下載及安裝由你手動進行；尚未發佈的提交不算新版本。"))
+            Text(t("Checks GitHub releases, including previews. Download and install updates manually.",
+                   "檢查 GitHub 發佈版本，包含預覽版。更新需手動下載及安裝。"))
                 .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
     }

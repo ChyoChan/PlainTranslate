@@ -32,30 +32,22 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(pane.title(for: l10n.language)).font(.title2.weight(.semibold))
-                    .accessibilityAddTraits(.isHeader)
-                Text(pane.subtitle(for: l10n.language)).font(.callout).foregroundStyle(.secondary)
+        ScrollViewReader { proxy in
+            Form {
+                switch pane {
+                case .translation: translationSettings
+                case .shortcuts: shortcutSettings
+                case .appearance: appearanceSettings
+                case .speech: speechSettings
+                case .usage: usageSettings
+                case .about: aboutSettings
+                }
             }
-            .padding(.horizontal, 26).padding(.top, 22).padding(.bottom, 6)
-            ScrollViewReader { proxy in
-                Form {
-                    switch pane {
-                    case .translation: translationSettings
-                    case .shortcuts: shortcutSettings
-                    case .appearance: appearanceSettings
-                    case .speech: speechSettings
-                    case .usage: usageSettings
-                    case .about: aboutSettings
-                    }
-                }
-                .formStyle(.grouped)
-                .onAppear { focusGoogleCredentials(using: proxy) }
-                .onChange(of: navigation.focusGoogleCredentials) { _, _ in focusGoogleCredentials(using: proxy) }
-                .onChange(of: credentials.busy) { _, busy in
-                    if !busy { focusGoogleCredentials(using: proxy) }
-                }
+            .formStyle(.grouped)
+            .onAppear { focusGoogleCredentials(using: proxy) }
+            .onChange(of: navigation.focusGoogleCredentials) { _, _ in focusGoogleCredentials(using: proxy) }
+            .onChange(of: credentials.busy) { _, busy in
+                if !busy { focusGoogleCredentials(using: proxy) }
             }
         }
         .toggleStyle(.switch)
@@ -95,11 +87,7 @@ struct SettingsView: View {
         Section {
             VStack(alignment: .leading, spacing: 6) {
                 Toggle(text.pdfLineBreakCleanup, isOn: $pdfCleanup)
-                caption(label("Join mid-sentence line breaks, preserving paragraphs and lists.",
-                              "合併句子中途的斷行，保留段落與清單。"))
-                DisclosureGroup(label("Processing details", "更多處理細節")) {
-                    caption(text.pdfLineBreakCleanupCaption)
-                }
+                caption(text.pdfLineBreakCleanupCaption)
             }
         }
         Section {
@@ -144,8 +132,8 @@ struct SettingsView: View {
                         }
                     Button(label("Reset", "重設")) { shortcut = .defaultValue }
                 }
-                caption(label("Click the shortcut and press a combination with Command, Control or Option. Escape cancels recording.",
-                              "按一下快捷鍵，再按包含 Command、Control 或 Option 的組合鍵；Escape 可取消錄製。"))
+                caption(label("Click to record a shortcut with ⌘, ⌃ or ⌥. Press Esc to cancel.",
+                              "按快捷鍵欄位錄製，須包含 ⌘、⌃ 或 ⌥；按 Esc 取消。"))
                 if model.customShortcutUnavailable {
                     Label(label("This shortcut is unavailable or used by another app. Choose another combination.",
                                 "此快捷鍵無法使用或已被其他 App 佔用，請選擇其他組合。"),
@@ -162,14 +150,14 @@ struct SettingsView: View {
                 if !permissions.accessibility {
                     Button(label("Open Accessibility Settings…", "開啟輔助使用設定…")) { permissions.requestAccessibility() }
                 }
-                caption(label("Select text in another app and use the shortcut to copy and translate it with the selected engine. You can still type or paste without Accessibility access.",
-                              "在其他 App 選取文字後使用快捷鍵，便會複製並以目前引擎翻譯。未授權時仍可在翻譯視窗輸入或貼上文字。"))
+                caption(label("Select text in another app, then use the shortcut. Typing and pasting work without permission.",
+                              "在其他 App 選取文字後按快捷鍵翻譯；未授權仍可輸入或貼上。"))
             }
         }
     }
 
     @ViewBuilder private var appearanceSettings: some View {
-            Section(text.popupAppearance) {
+            Section {
                 HStack {
                     Text(text.popupWidth).frame(width: 100, alignment: .leading)
                     Slider(value: Binding(
@@ -222,8 +210,8 @@ struct SettingsView: View {
             .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(nsColor: .separatorColor), lineWidth: 1))
             .frame(maxWidth: .infinity)
             .accessibilityIdentifier("translationAppearancePreview")
-            caption(label("The preview fits this pane. Open the popup to see its actual size.",
-                          "預覽會配合此面板縮窄；開啟彈窗可查看實際大小。"))
+            caption(label("Preview width is limited by this pane. Open the popup for its actual size.",
+                          "預覽受面板寬度限制；開啟彈窗可查看實際大小。"))
         }
     }
 

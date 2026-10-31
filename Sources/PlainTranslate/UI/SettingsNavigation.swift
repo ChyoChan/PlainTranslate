@@ -20,18 +20,6 @@ enum SettingsPane: String, CaseIterable {
         }
     }
 
-    func subtitle(for language: AppLanguage) -> String {
-        let chinese = language != .en
-        switch self {
-        case .translation: return chinese ? "選擇翻譯引擎及文字處理方式。" : "Choose a translation engine and text preparation options."
-        case .shortcuts: return chinese ? "從其他 App 選取文字，快速開啟翻譯。" : "Translate selected text from other apps."
-        case .appearance: return chinese ? "比較字體與寬度調整後的閱讀效果。" : "Preview the popup's text size and width."
-        case .speech: return chinese ? "使用這部 Mac 上已安裝的語音。" : "Choose from the voices installed on this Mac."
-        case .usage: return chinese ? "檢視這個 App 的本機統計與暫存。" : "Review this app's local submission estimates and cache."
-        case .about: return chinese ? "PlainTranslate · 簡單、獨立的 Mac 翻譯工具。" : "PlainTranslate · A small, independent Mac translator."
-        }
-    }
-
     var symbol: String {
         switch self {
         case .translation: return "character.bubble"

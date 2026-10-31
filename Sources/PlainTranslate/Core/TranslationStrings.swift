@@ -15,22 +15,22 @@ struct TranslationStrings {
     var clearCache: String { t("Clear cache", "清除暫存", "清除缓存") }
     func cacheCount(_ count: Int) -> String { t("\(count) cached results", "已暫存 \(count) 筆結果", "已缓存 \(count) 条结果") }
     var cacheCaption: String {
-        t("Reuse successful results for the same prepared text, languages and engine. Up to 20 results stay in memory only, until you clear them, lock the session or quit. Google cache hits send no request and add no usage.",
-          "相同文字、語言及引擎會重用成功結果。最多 20 筆，只存於記憶體；清除、鎖定工作階段或退出 App 時移除。命中 Google 暫存不會發送請求或增加用量。",
-          "相同文字、语言及引擎会复用成功结果。最多 20 条，仅存于内存；清除、锁定会话或退出 App 时移除。命中 Google 缓存不会发送请求或增加用量。")
+        t("Keep up to 20 results in memory; clear the cache, lock your Mac or quit to remove them. Reusing the same text, languages and engine sends no Google request and adds no usage.",
+          "相同文字、語言及引擎可重用結果，不增加 Google 用量。最多 20 筆，僅存記憶體；清除、鎖定或結束 App 時移除。",
+          "相同文字、语言及引擎可复用结果，不增加 Google 用量。最多 20 条，仅存内存；清除、锁定或退出 App 时移除。")
     }
     var title: String { t("Translation", "翻譯", "翻译") }
     var enable: String { t("Translate on double ⌘C", "連按兩次 ⌘C 翻譯", "连按两次 ⌘C 翻译") }
     var pdfLineBreakCleanup: String { t("PDF line break cleanup", "PDF 換行整理", "PDF 换行整理") }
     var pdfLineBreakCleanupCaption: String {
-        t("Join mid-sentence line breaks before translating, preserving blank paragraphs, list markers and indented text. The original stays editable. Turn off for text with intentional line breaks.",
-          "翻譯前合併句子中途的斷行，保留空白分段、清單標記及縮排文字。編輯時仍保留原文；如需逐行保留格式，可關閉此選項。",
-          "翻译前合并句子中途的断行，保留空白分段、列表标记和缩进文字。编辑时仍保留原文；如需逐行保留格式，可关闭此选项。")
+        t("Join sentence line breaks; keep paragraphs, lists and indentation. The original stays editable. Turn off to preserve every line.",
+          "合併句中斷行，保留段落、清單及縮排。原文仍可編輯；需逐行保留時請關閉。",
+          "合并句中断行，保留段落、列表及缩进。原文仍可编辑；需逐行保留时请关闭。")
     }
     var caption: String {
-        t("Select text, then press ⌘C twice within 0.7 seconds. Normal copying is unchanged.",
-          "選取文字，於 0.7 秒內連按兩次 ⌘C。正常複製行為不變。",
-          "选中文字，在 0.7 秒内连按两次 ⌘C。正常复制行为不变。")
+        t("Select text, then press ⌘C twice within 0.7 seconds.",
+          "選取文字後，於 0.7 秒內連按兩次 ⌘C。",
+          "选中文字后，在 0.7 秒内连按两次 ⌘C。")
     }
     var privacy: String {
         t("Apple on-device translation. No translation history is saved. The first use may ask to download languages.",
@@ -38,15 +38,14 @@ struct TranslationStrings {
           "使用 Apple 本地翻译，不保存翻译历史。首次使用可能需要下载语言包。")
     }
     var open: String { t("Open translator…", "開啟翻譯…", "打开翻译…") }
-    var popupAppearance: String { t("Translation popup", "翻譯彈窗", "翻译弹窗") }
     var popupWidth: String { t("Width", "寬度", "宽度") }
     var popupFontSize: String { t("Text size", "字體大小", "字体大小") }
     var previewPopup: String { t("Preview popup", "預覽彈窗", "预览弹窗") }
     var resetAppearance: String { t("Restore defaults", "還原預設", "恢复默认") }
     var popupAppearanceCaption: String {
-        t("Height adjusts to the text. Resizing the popup remembers its width for next time.",
-          "高度隨文字自動調整；拖曳調整的寬度會保留到下次開啟。",
-          "高度随文字自动调整；拖动调整的宽度会保留到下次打开。")
+        t("Height adjusts automatically. Your resized width is remembered.",
+          "高度自動調整，拖曳調整的寬度會保留。",
+          "高度自动调整，拖动调整的宽度会保留。")
     }
     var source: String { t("Original", "原文") }
     var result: String { t("Translation", "譯文", "译文") }
@@ -66,7 +65,7 @@ struct TranslationStrings {
     var speechAutomaticVoice: String { t("Automatic (best quality)", "自動（最高品質）", "自动（最高质量）") }
     var speechPreview: String { t("Preview", "試聽", "试听") }
     var speechStopPreview: String { t("Stop", "停止") }
-    var speechRate: String { t("Reading speed", "朗讀速度", "朗读速度") }
+    var speechRate: String { t("Speed", "語速", "语速") }
     var speechSlower: String { t("Slower", "較慢", "较慢") }
     var speechFaster: String { t("Faster", "較快", "较快") }
     var speechNormal: String { t("Normal", "標準", "标准") }
@@ -77,9 +76,9 @@ struct TranslationStrings {
     var speechPremium: String { t("Premium", "優質", "优质") }
     var speechUnavailableSelection: String { t("Selected voice unavailable (uses Automatic)", "所選聲音未安裝（自動替代）", "所选声音未安装（自动替代）") }
     var speechDownloadCaption: String {
-        t("Download Enhanced or Premium voices in macOS Accessibility → Read & Speak → System voice ⓘ. Voices refresh when you return. Automatic prefers a matching language and region, then the best installed quality. Selection and speed apply to previews and translation reading; unavailable voices fall back to Automatic.",
-          "可在 macOS「輔助使用 → 閱讀與朗讀 → 系統聲音 ⓘ」下載增強或優質語音，返回時會更新清單。自動模式優先配對語言及地區，再選最高品質。所選聲音及速度會套用到試聽和翻譯朗讀；未安裝的聲音會自動替代。",
-          "可在 macOS“辅助功能 → 阅读与朗读 → 系统声音 ⓘ”下载增强或优质语音，返回时会更新列表。自动模式优先匹配语言和地区，再选最高质量。所选声音及速度会应用于试听和翻译朗读；未安装的声音会自动替代。")
+        t("Download Enhanced or Premium voices in macOS Accessibility → Read & Speak → System voice ⓘ. Unavailable voices use Automatic.",
+          "可在 macOS「輔助使用 → 閱讀與朗讀 → 系統聲音 ⓘ」下載增強或優質語音。未安裝的聲音會自動替代。",
+          "可在 macOS“辅助功能 → 阅读与朗读 → 系统声音 ⓘ”下载增强或优质语音。未安装的声音会自动替代。")
     }
     func speechLanguage(_ language: String) -> String {
         switch language {
@@ -91,9 +90,9 @@ struct TranslationStrings {
         }
     }
     var speechCaption: String {
-        t("Press a speaker button to read a word, sentence or passage using installed macOS voices. English and Japanese use their matching voice. Reading does not use Google translation characters.",
-          "按喇叭按鈕，使用已安裝的 macOS 語音朗讀單字、句子或段落；英文及日文會使用相應語音。朗讀不計入 Google 翻譯字元用量。",
-          "按喇叭按钮，使用已安装的 macOS 语音朗读单词、句子或段落；英文及日文会使用相应语音。朗读不计入 Google 翻译字符用量。")
+        t("Uses installed macOS voices. Reading does not use Google translation characters.",
+          "使用已安裝的 macOS 語音，朗讀不計入 Google 翻譯用量。",
+          "使用已安装的 macOS 语音，朗读不计入 Google 翻译用量。")
     }
     var speechUnknownLanguage: String {
         t("Choose the original language in Edit, then try reading again.",
@@ -122,16 +121,16 @@ struct TranslationStrings {
     var googleUsageReminderCaption: String {
         let threshold = GoogleTranslationUsageReminder.thresholdCharacters.formatted(.number)
         let allowance = GoogleTranslationUsageReminder.freeTierCharacters.formatted(.number)
-        return t("Remind once per Hong Kong calendar month at \(threshold) characters (90% of the \(allowance)-character reference allowance). Uses only this app’s local estimate; translation will not stop. Other apps can share Google’s free credit. Check Google Cloud for actual usage and charges.",
-                 "每個香港曆月於本機累計達 \(threshold) 字元時提醒一次（參考免費額度 \(allowance) 字元的 90%），不會停止翻譯。只根據此 App 的本機估算；其他 App 亦可能共用 Google 免費抵免，實際用量及費用請在 Google Cloud 核對。",
-                 "每个香港日历月在本地累计达到 \(threshold) 字符时提醒一次（参考免费额度 \(allowance) 字符的 90%），不会停止翻译。仅根据此 App 的本地估算；其他 App 也可能共用 Google 免费抵免，实际用量及费用请在 Google Cloud 核对。")
+        return t("Remind once per month at \(threshold) characters (90% of the \(allowance)-character reference allowance). Translation continues. Other apps may share the free credit.",
+                 "每月達 \(threshold) 字元時提醒一次（參考免費額度 \(allowance) 字元的 90%），不會停止翻譯。其他 App 可能共用免費抵免。",
+                 "每月达到 \(threshold) 字符时提醒一次（参考免费额度 \(allowance) 字符的 90%），不会停止翻译。其他 App 可能共用免费抵免。")
     }
     var hongKongTime: String { t("Hong Kong time", "香港時間", "香港时间") }
     var googleUsageConsole: String { t("View Google Cloud usage", "查看 Google Cloud 用量", "查看 Google Cloud 用量") }
     var googleUsageCaption: String {
-        t("Counts this app’s submissions since this feature was added, including spaces and line breaks. Failed or cancelled submissions remain counted. Resets monthly in Hong Kong time; actual usage and charges are shown in Google Cloud.",
-          "只記錄此功能加入後、這個 App 提交的原文字元，包含空格及換行。送出後失敗或取消仍計入估算，按香港時間每月重新計算；實際用量及費用以 Google Cloud 為準。",
-          "只记录此功能加入后、这个 App 提交的原文字符，包含空格及换行。发送后失败或取消仍计入估算，按香港时间每月重新计算；实际用量及费用以 Google Cloud 为准。")
+        t("Counts this app’s recorded submissions, including spaces, line breaks and failed or cancelled submissions. Resets monthly in Hong Kong time. Check Google Cloud for actual usage and charges.",
+          "只統計此 App 已記錄的提交，包含空格、換行及送出後失敗或取消的請求。按香港時間每月重計；實際用量及費用以 Google Cloud 為準。",
+          "只统计此 App 已记录的提交，包含空格、换行及发送后失败或取消的请求。按香港时间每月重计；实际用量及费用以 Google Cloud 为准。")
     }
     var googlePrivacy: String {
         t("With Google selected, pausing typing automatically sends the original text to Google Cloud and may incur usage charges. No translation history is saved by this app.",
@@ -186,7 +185,7 @@ struct TranslationStrings {
     var unsupported: String { t("Apple does not support this language pair on this Mac. Choose another language.", "這部 Mac 的 Apple 翻譯不支援此語言組合，請選擇其他語言。", "这台 Mac 的 Apple 翻译不支持此语言组合，请选择其他语言。") }
     var unknownSource: String { t("Choose the source language and try again. Very short text can be ambiguous.", "請選擇原文語言後重試；太短的文字可能無法自動辨識。", "请选择原文语言后重试；太短的文字可能无法自动识别。") }
     var failed: String { t("Translation failed. Check the selected languages and try again. Language downloads may need a network connection.", "翻譯未完成，請檢查所選語言後重試。下載語言包可能需要網絡連線。", "翻译未完成，请检查所选语言后重试。下载语言包可能需要联网。") }
-    var permission: String { t("Allow Accessibility to detect double ⌘C in other apps. You can still paste text here without it.", "請允許輔助使用，以偵測其他 App 的兩次 ⌘C；未授權時仍可在此貼上文字翻譯。", "请允许辅助功能，以检测其他 App 的两次 ⌘C；未授权时仍可在此粘贴文字翻译。") }
+    var permission: String { t("Accessibility access required", "需授予輔助使用權限", "需要授予辅助功能权限") }
     var from: String { t("Source language", "原文語言", "原文语言") }
     var to: String { t("Target language", "目標語言", "目标语言") }
 }
