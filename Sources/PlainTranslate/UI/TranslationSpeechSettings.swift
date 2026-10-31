@@ -11,50 +11,53 @@ struct TranslationSpeechSettings: View {
     private var text: TranslationStrings { TranslationStrings(language: l10n.language) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        Section {
             ForEach(TranslationSpeechLanguage.voiceGroups, id: \.self) { language in
                 let voices = model.availableSpeechVoices.filter { TranslationSpeechLanguage.voiceGroup($0.language) == language }
                 let selection = model.speechVoiceSelections[language] ?? ""
                 let previewing = model.speakingPart == .preview(language)
-                HStack(spacing: 10) {
-                    Text(text.speechLanguage(language)).frame(width: 82, alignment: .leading)
-                    Picker(text.speechLanguage(language), selection: Binding(
-                        get: { model.speechVoiceSelections[language] ?? "" },
-                        set: { model.setSpeechVoice($0, language: language) }
-                    )) {
-                        Text(text.speechAutomaticVoice).tag("")
-                        ForEach(voices, id: \.identifier) { voice in
-                            Text(voiceTitle(voice)).tag(voice.identifier)
+                LabeledContent(text.speechLanguage(language)) {
+                    HStack(spacing: 12) {
+                        Picker(text.speechLanguage(language), selection: Binding(
+                            get: { model.speechVoiceSelections[language] ?? "" },
+                            set: { model.setSpeechVoice($0, language: language) }
+                        )) {
+                            Text(text.speechAutomaticVoice).tag("")
+                            ForEach(voices, id: \.identifier) { voice in
+                                Text(voiceTitle(voice)).tag(voice.identifier)
+                            }
+                            if !selection.isEmpty && !voices.contains(where: { $0.identifier == selection }) {
+                                Text(text.speechUnavailableSelection).tag(selection)
+                            }
                         }
-                        if !selection.isEmpty && !voices.contains(where: { $0.identifier == selection }) {
-                            Text(text.speechUnavailableSelection).tag(selection)
+                        .labelsHidden()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityLabel("\(text.speechOptions) · \(text.speechLanguage(language))")
+                        .accessibilityIdentifier("translationVoice-" + language)
+                        Button {
+                            model.toggleSpeech(.preview(language))
+                        } label: {
+                            Text(previewing ? text.speechStopPreview : text.speechPreview).frame(minWidth: 48)
                         }
+                        .controlSize(.small)
+                        .disabled(model.busy || (voices.isEmpty && !previewing))
+                        .accessibilityLabel("\(previewing ? text.stopSpeech : text.speechPreview) · \(text.speechLanguage(language))")
+                        .accessibilityIdentifier("translationVoicePreview-" + language)
                     }
-                    .labelsHidden()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityLabel("\(text.speechOptions) · \(text.speechLanguage(language))")
-                    .accessibilityIdentifier("translationVoice-" + language)
-                    Button {
-                        model.toggleSpeech(.preview(language))
-                    } label: {
-                        Text(previewing ? text.speechStopPreview : text.speechPreview).frame(minWidth: 48)
-                    }
-                    .controlSize(.small)
-                    .disabled(model.busy || (voices.isEmpty && !previewing))
-                    .accessibilityLabel("\(previewing ? text.stopSpeech : text.speechPreview) · \(text.speechLanguage(language))")
-                    .accessibilityIdentifier("translationVoicePreview-" + language)
                 }
             }
-            HStack(spacing: 10) {
-                Text(text.speechRate).frame(width: 82, alignment: .leading)
-                Slider(value: Binding(get: { model.speechRate }, set: { model.setSpeechRate($0) }),
-                       in: TranslationSpeechPreferences.rateRange, step: 0.05) {
-                    Text(text.speechRate)
+            LabeledContent(text.speechRate) {
+                HStack(spacing: 12) {
+                    Slider(value: Binding(get: { model.speechRate }, set: { model.setSpeechRate($0) }),
+                           in: TranslationSpeechPreferences.rateRange, step: 0.05) {
+                        Text(text.speechRate)
+                    }
+                    .labelsHidden()
+                    .accessibilityLabel(text.speechRate)
+                    .accessibilityIdentifier("translationSpeechRate")
+                    Text(rateDescription).font(.callout).foregroundStyle(.primary)
+                        .frame(minWidth: 50, alignment: .trailing)
                 }
-                .labelsHidden()
-                .accessibilityLabel(text.speechRate)
-                .accessibilityIdentifier("translationSpeechRate")
-                Text(rateDescription).font(.caption).foregroundStyle(.primary).frame(width: 50)
             }
             HStack {
                 Button(text.speechResetRate) { model.setSpeechRate(TranslationSpeechPreferences.defaultRate) }
@@ -66,12 +69,15 @@ struct TranslationSpeechSettings: View {
                 }
             }
             .controlSize(.small)
-            Text(text.speechDownloadCaption).font(.caption).foregroundStyle(.primary)
-                .fixedSize(horizontal: false, vertical: true)
             if let message = model.speechMessage {
-                Text(message).font(.caption).foregroundStyle(.primary)
+                Text(message).font(.callout).foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+        } header: {
+            Text(text.speechOptions)
+        } footer: {
+            Text(text.speechDownloadCaption).font(.callout).foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true).lineSpacing(2)
         }
         .task { model.refreshSpeechVoices() }
         .onReceive(NotificationCenter.default.publisher(for: AVSpeechSynthesizer.availableVoicesDidChangeNotification)

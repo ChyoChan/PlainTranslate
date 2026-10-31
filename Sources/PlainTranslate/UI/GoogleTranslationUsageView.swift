@@ -12,45 +12,49 @@ struct GoogleTranslationUsageView: View {
     private let refreshTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(text.googleUsageTitle).font(.subheadline.weight(.medium))
-            Text("\(usage.month) · \(text.hongKongTime)")
-                .font(.caption).foregroundStyle(.primary)
-            HStack {
-                Text(text.googleSubmittedCharacters)
-                Spacer()
-                Text(usage.characters, format: .number).monospacedDigit()
-            }
-            HStack {
-                Text(text.googleRequestCount)
-                Spacer()
-                Text(usage.requests, format: .number).monospacedDigit()
-            }
-            Divider()
-            Toggle(text.googleUsageReminder, isOn: $reminderEnabled)
-                .toggleStyle(.switch)
-                .accessibilityIdentifier("googleUsageReminderToggle")
-            Text(text.googleUsageReminderCaption).font(.caption).foregroundStyle(.primary)
-                .fixedSize(horizontal: false, vertical: true)
-            if usage.characters >= GoogleTranslationUsageReminder.thresholdCharacters {
-                Label {
-                    Text(text.googleUsageReminderHUD)
-                } icon: {
-                    Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
+        Group {
+            Section {
+                LabeledContent(text.googleSubmittedCharacters) {
+                    Text(usage.characters, format: .number).monospacedDigit().foregroundStyle(.primary)
                 }
-                    .font(.callout)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("googleUsageThresholdWarning")
+                LabeledContent(text.googleRequestCount) {
+                    Text(usage.requests, format: .number).monospacedDigit().foregroundStyle(.primary)
+                }
+                if usage.characters >= GoogleTranslationUsageReminder.thresholdCharacters {
+                    Label {
+                        Text(text.googleUsageReminderHUD)
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
+                    }
+                        .font(.callout)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("googleUsageThresholdWarning")
+                }
+                Link(text.googleUsageConsole, destination: URL(string: "https://console.cloud.google.com/apis/api/translate.googleapis.com/metrics")!)
+            } header: {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(text.googleUsageTitle)
+                    Text("\(usage.month) · \(text.hongKongTime)").font(.callout).foregroundStyle(.primary)
+                }
+            } footer: {
+                Text(text.googleUsageCaption).font(.callout).foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true).lineSpacing(2)
             }
-            Link(text.googleUsageConsole, destination: URL(string: "https://console.cloud.google.com/apis/api/translate.googleapis.com/metrics")!)
-            Text(text.googleUsageCaption).font(.caption).foregroundStyle(.primary)
-                .fixedSize(horizontal: false, vertical: true)
+            .onAppear { refresh() }
+            .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
+                .receive(on: DispatchQueue.main)) { _ in refresh() }
+            .onReceive(refreshTimer) { date in usage = GoogleTranslationUsageStore.shared.snapshot(at: date) }
+            .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in refresh() }
+
+            Section {
+                Toggle(text.googleUsageReminder, isOn: $reminderEnabled)
+                    .toggleStyle(.switch)
+                    .accessibilityIdentifier("googleUsageReminderToggle")
+            } footer: {
+                Text(text.googleUsageReminderCaption).font(.callout).foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true).lineSpacing(2)
+            }
         }
-        .onAppear { refresh() }
-        .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
-            .receive(on: DispatchQueue.main)) { _ in refresh() }
-        .onReceive(refreshTimer) { date in usage = GoogleTranslationUsageStore.shared.snapshot(at: date) }
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in refresh() }
     }
 
     private func refresh() { usage = GoogleTranslationUsageStore.shared.snapshot() }

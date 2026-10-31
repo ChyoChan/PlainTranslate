@@ -12,20 +12,22 @@ struct ReleaseUpdateSection: View {
     init(model: ReleaseUpdateService) { self.model = model }
 
     var body: some View {
-        Section(t("Check for updates", "檢查新版本")) {
-            LabeledContent(t("Installed version", "目前版本"), value: model.currentVersion)
-            HStack {
-                Button(t("Check now", "立即檢查")) { Task { await model.check() } }
-                    .disabled(model.isChecking)
-                    .accessibilityIdentifier("checkPublishedAppRelease")
-                if model.isChecking {
-                    ProgressView().controlSize(.small)
-                        .accessibilityLabel(t("Checking…", "正在檢查…"))
+        Section {
+            LabeledContent(t("Installed version", "目前版本")) {
+                HStack(spacing: 12) {
+                    Text(model.currentVersion).monospacedDigit().foregroundStyle(.primary)
+                    Button(t("Check now", "立即檢查")) { Task { await model.check() } }
+                        .disabled(model.isChecking)
+                        .accessibilityIdentifier("checkPublishedAppRelease")
+                    if model.isChecking {
+                        ProgressView().controlSize(.small)
+                            .accessibilityLabel(t("Checking…", "正在檢查…"))
+                    }
                 }
             }
             if let error = model.error {
                 Label(errorText(error), systemImage: "exclamationmark.triangle")
-                    .font(.callout).foregroundStyle(.secondary)
+                    .font(.callout).foregroundStyle(.primary)
                     .accessibilityIdentifier("publishedReleaseError")
             }
             if let release = model.release {
@@ -33,7 +35,7 @@ struct ReleaseUpdateSection: View {
                           t("No newer release", "未有較新版本"),
                       systemImage: model.hasNewerVersion ? "arrow.down.circle" : "checkmark.circle")
                     .accessibilityIdentifier("publishedReleaseStatus")
-                if release.preview { Text(t("Preview release", "預覽版本")).font(.caption).foregroundStyle(.secondary) }
+                if release.preview { Text(t("Preview release", "預覽版本")).font(.callout) }
                 Link(t("View release and downloads", "查看版本及下載"), destination: release.url)
                 if !release.notes.isEmpty {
                     DisclosureGroup(t("Release notes", "更新內容")) {
@@ -49,12 +51,17 @@ struct ReleaseUpdateSection: View {
             if let date = model.lastChecked {
                 LabeledContent(t("Last successful check", "上次成功檢查")) {
                     Text(date, format: .dateTime.year().month().day().hour().minute())
-                }.font(.caption).foregroundStyle(.secondary)
+                        .foregroundStyle(.primary)
+                }.font(.callout)
             }
             Link(t("All releases on GitHub", "GitHub 所有版本"), destination: model.client.releasesURL)
+        } header: {
+            Text(t("Check for updates", "檢查新版本"))
+        } footer: {
             Text(t("Checks GitHub releases, including previews. Download and install updates manually.",
                    "檢查 GitHub 發佈版本，包含預覽版。更新需手動下載及安裝。"))
-                .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                .font(.callout).foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true).lineSpacing(2)
         }
     }
 

@@ -13,7 +13,16 @@ final class InterfaceTests: XCTestCase {
         try prepareBrandMarkForUITests()
         AppPreferences.registerDefaults()
         let previousLanguage = L10n.shared.language
-        defer { L10n.shared.setLanguage(previousLanguage) }
+        let settingsModel = TranslationService.shared
+        let previousEngine = settingsModel.engine
+        let previousEnginePreference = UserDefaults.standard.object(forKey: DefaultsKey.translationEngine)
+        defer {
+            L10n.shared.setLanguage(previousLanguage)
+            settingsModel.setEngine(previousEngine)
+            if let previousEnginePreference { UserDefaults.standard.set(previousEnginePreference, forKey: DefaultsKey.translationEngine) }
+            else { UserDefaults.standard.removeObject(forKey: DefaultsKey.translationEngine) }
+        }
+        settingsModel.setEngine(.apple)
         let original = "Resource pooling lets several users share computing resources.\n\nThe application keeps the original text above the translation."
         let translated = "資源共享讓多位使用者共用運算資源。\n\nApp 會將原文保留在譯文上方。"
         let directory = ProcessInfo.processInfo.environment["PLAINTRANSLATE_PREVIEW_DIR"]
@@ -77,7 +86,22 @@ final class InterfaceTests: XCTestCase {
                         size: NSSize(width: width, height: 680),
                         name: "settings-\(pane.rawValue)-\(language.rawValue)-\(width)-\(scheme)", directory: directory)
                 }
+                try render(SettingsView(pane: pane, inspectCredentials: false, navigation: navigation)
+                    .font(.system(size: 20)).environment(\.colorScheme, scheme),
+                    size: NSSize(width: 620, height: 680),
+                    name: "settings-\(pane.rawValue)-\(language.rawValue)-accessible-\(scheme)", directory: directory)
             }
+            navigation.selectPane(.translation)
+            settingsModel.setEngine(.google)
+            for width in [620, 840] {
+                try render(SettingsView(pane: .translation, inspectCredentials: false, navigation: navigation)
+                    .environment(\.colorScheme, scheme),
+                    size: NSSize(width: width, height: 680),
+                    name: "settings-google-\(language.rawValue)-\(width)-\(scheme)", directory: directory)
+            }
+            XCTAssertNil(settingsModel.request, "Rendering engine settings must never submit text")
+            XCTAssertFalse(settingsModel.busy)
+            settingsModel.setEngine(.apple)
         }
     }
 
@@ -131,7 +155,10 @@ final class InterfaceTests: XCTestCase {
     private func render<Content: View>(_ content: Content, size: NSSize,
                                       name: String, directory: String?) throws {
         let previousAppearance = NSApp.appearance
-        NSApp.appearance = NSAppearance(named: name.hasSuffix("dark") ? .darkAqua : .aqua)
+        let appearance: NSAppearance.Name = name.contains("-accessible-")
+            ? (name.hasSuffix("dark") ? .accessibilityHighContrastDarkAqua : .accessibilityHighContrastAqua)
+            : (name.hasSuffix("dark") ? .darkAqua : .aqua)
+        NSApp.appearance = NSAppearance(named: appearance)
         defer { NSApp.appearance = previousAppearance }
         let host = NSHostingView(rootView: content)
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),

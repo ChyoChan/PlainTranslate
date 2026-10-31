@@ -71,21 +71,22 @@ struct SettingsView: View {
 
     @ViewBuilder private var translationSettings: some View {
         Section {
-            LabeledContent(text.engine) {
-                Picker(text.engine, selection: Binding(get: { model.engine }, set: { model.setEngine($0) })) {
-                    Label("Apple", systemImage: "cpu").tag(TranslationEngine.apple)
-                    Label("Google", systemImage: "cloud").tag(TranslationEngine.google)
+            VStack(alignment: .leading, spacing: 8) {
+                LabeledContent(text.engine) {
+                    Picker(text.engine, selection: Binding(get: { model.engine }, set: { model.setEngine($0) })) {
+                        Label("Apple", systemImage: "cpu").tag(TranslationEngine.apple)
+                        Label("Google", systemImage: "cloud").tag(TranslationEngine.google)
+                    }
+                    .pickerStyle(.segmented).labelsHidden().frame(width: 210)
+                    .accessibilityIdentifier("settingsTranslationEngine")
                 }
-                .pickerStyle(.segmented).labelsHidden().frame(width: 210)
-                .accessibilityIdentifier("settingsTranslationEngine")
+                // Keep cloud transmission and cost information beside the engine choice.
+                caption(model.privacyNotice)
             }
-            // Cloud transmission and cost information stays visible at the point of choice.
-            Text(model.privacyNotice).font(.caption).foregroundStyle(.primary)
-                .fixedSize(horizontal: false, vertical: true)
             if model.engine == .google { credentialsSection.id(Self.googleCredentialsID) }
         }
         Section {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 Toggle(text.pdfLineBreakCleanup, isOn: $pdfCleanup)
                 caption(text.pdfLineBreakCleanupCaption)
             }
@@ -103,16 +104,17 @@ struct SettingsView: View {
 
     @ViewBuilder private var shortcutSettings: some View {
         Section {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 Toggle(text.enable, isOn: $doubleCopy)
                     .onChange(of: doubleCopy) { _, _ in
                         permissions.refresh()
                         model.syncWithPreferences()
                     }
                 caption(text.caption)
-                caption(label("Enable double ⌘C in only one translation app to avoid duplicate popups.",
-                              "請只在一個翻譯 App 啟用雙 ⌘C，避免重複彈窗。"))
             }
+        } footer: {
+            caption(label("Enable double ⌘C in only one translation app to avoid duplicate popups.",
+                          "請只在一個翻譯 App 啟用雙 ⌘C，避免重複彈窗。"))
         }
         Section {
             Toggle(label("Custom translation shortcut", "自訂翻譯快捷鍵"), isOn: $customShortcutEnabled)
@@ -121,35 +123,42 @@ struct SettingsView: View {
                     model.syncWithPreferences()
                 }
             if customShortcutEnabled {
-                HStack {
-                    Text(label("Shortcut", "快捷鍵"))
-                    Spacer()
-                    TranslationShortcutRecorder(shortcut: $shortcut, onRecordingChanged: model.setRecordingShortcut)
-                        .frame(width: 180, height: 30)
-                        .onChange(of: shortcut) { _, value in
-                            value.save(to: .standard)
-                            model.syncWithPreferences()
+                VStack(alignment: .leading, spacing: 8) {
+                    LabeledContent(label("Shortcut", "快捷鍵")) {
+                        HStack(spacing: 12) {
+                            TranslationShortcutRecorder(shortcut: $shortcut, onRecordingChanged: model.setRecordingShortcut)
+                                .frame(width: 180, height: 30)
+                                .onChange(of: shortcut) { _, value in
+                                    value.save(to: .standard)
+                                    model.syncWithPreferences()
+                                }
+                            Button(label("Reset", "重設")) { shortcut = .defaultValue }
                         }
-                    Button(label("Reset", "重設")) { shortcut = .defaultValue }
-                }
-                caption(label("Click to record a shortcut with ⌘, ⌃ or ⌥. Press Esc to cancel.",
-                              "按快捷鍵欄位錄製，須包含 ⌘、⌃ 或 ⌥；按 Esc 取消。"))
-                if model.customShortcutUnavailable {
-                    Label(label("This shortcut is unavailable or used by another app. Choose another combination.",
-                                "此快捷鍵無法使用或已被其他 App 佔用，請選擇其他組合。"),
-                          systemImage: "exclamationmark.triangle")
-                        .font(.callout).accessibilityIdentifier("translationShortcutConflict")
+                    }
+                    caption(label("Click to record a shortcut with ⌘, ⌃ or ⌥. Press Esc to cancel.",
+                                  "按快捷鍵欄位錄製，須包含 ⌘、⌃ 或 ⌥；按 Esc 取消。"))
+                    if model.customShortcutUnavailable {
+                        Label(label("This shortcut is unavailable or used by another app. Choose another combination.",
+                                    "此快捷鍵無法使用或已被其他 App 佔用，請選擇其他組合。"),
+                              systemImage: "exclamationmark.triangle")
+                            .font(.callout).fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("translationShortcutConflict")
+                    }
                 }
             }
         }
         if doubleCopy || customShortcutEnabled {
             Section {
-                Label(permissions.accessibility ? label("Accessibility access granted", "已授予輔助使用權限") : text.permission,
-                      systemImage: permissions.accessibility ? "checkmark.circle" : "lock.shield")
-                    .font(.callout)
-                if !permissions.accessibility {
-                    Button(label("Open Accessibility Settings…", "開啟輔助使用設定…")) { permissions.requestAccessibility() }
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    Label(permissions.accessibility ? label("Accessibility access granted", "已授予輔助使用權限") : text.permission,
+                          systemImage: permissions.accessibility ? "checkmark.circle" : "lock.shield")
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 8)
+                    if !permissions.accessibility {
+                        Button(label("Open Accessibility Settings…", "開啟輔助使用設定…")) { permissions.requestAccessibility() }
+                    }
                 }
+            } footer: {
                 caption(label("Select text in another app, then use the shortcut. Typing and pasting work without permission.",
                               "在其他 App 選取文字後按快捷鍵翻譯；未授權仍可輸入或貼上。"))
             }
@@ -157,9 +166,9 @@ struct SettingsView: View {
     }
 
     @ViewBuilder private var appearanceSettings: some View {
-            Section {
-                HStack {
-                    Text(text.popupWidth).frame(width: 100, alignment: .leading)
+        Section {
+            LabeledContent(text.popupWidth) {
+                HStack(spacing: 12) {
                     Slider(value: Binding(
                         get: { TranslationCompactLayout.width(popupWidth) },
                         set: { popupWidth = $0; model.applyPopupAppearance() }
@@ -167,10 +176,12 @@ struct SettingsView: View {
                         .labelsHidden()
                         .accessibilityLabel(text.popupWidth)
                     Text("\(Int(TranslationCompactLayout.width(popupWidth))) pt")
-                        .monospacedDigit().frame(width: 64, alignment: .trailing)
+                        .monospacedDigit().foregroundStyle(.primary)
+                        .frame(minWidth: 64, alignment: .trailing)
                 }
-                HStack {
-                    Text(text.popupFontSize).frame(width: 100, alignment: .leading)
+            }
+            LabeledContent(text.popupFontSize) {
+                HStack(spacing: 12) {
                     Slider(value: Binding(
                         get: { TranslationCompactLayout.fontSize(popupFontSize) },
                         set: { popupFontSize = $0 }
@@ -178,22 +189,26 @@ struct SettingsView: View {
                         .labelsHidden()
                         .accessibilityLabel(text.popupFontSize)
                     Text("\(Int(TranslationCompactLayout.fontSize(popupFontSize))) pt")
-                        .monospacedDigit().frame(width: 64, alignment: .trailing)
+                        .monospacedDigit().foregroundStyle(.primary)
+                        .frame(minWidth: 64, alignment: .trailing)
                 }
-                HStack {
-                    Button(text.previewPopup) { model.open(.compact) }
-                    Button(text.resetAppearance) {
-                        popupWidth = TranslationCompactLayout.defaultWidth
-                        popupFontSize = TranslationCompactLayout.defaultFontSize
-                        model.applyPopupAppearance()
-                    }
-                }
-                caption(text.popupAppearanceCaption)
             }
-        Section(label("Reading preview", "閱讀預覽")) {
+            HStack(spacing: 12) {
+                Button(text.resetAppearance) {
+                    popupWidth = TranslationCompactLayout.defaultWidth
+                    popupFontSize = TranslationCompactLayout.defaultFontSize
+                    model.applyPopupAppearance()
+                }
+                Spacer()
+                Button(text.previewPopup) { model.open(.compact) }
+            }
+        } footer: {
+            caption(text.popupAppearanceCaption)
+        }
+        Section {
             VStack(alignment: .leading, spacing: 0) {
                 Text("A clear space for every thought.")
-                    .font(.body).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
+                    .font(.body).frame(maxWidth: .infinity, alignment: .leading)
                     .padding(16)
                 Divider()
                 Text("讓每個想法，都有清晰的表達空間。")
@@ -210,64 +225,78 @@ struct SettingsView: View {
             .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(nsColor: .separatorColor), lineWidth: 1))
             .frame(maxWidth: .infinity)
             .accessibilityIdentifier("translationAppearancePreview")
+        } header: {
+            Text(label("Reading preview", "閱讀預覽"))
+        } footer: {
             caption(label("Preview width is limited by this pane. Open the popup for its actual size.",
                           "預覽受面板寬度限制；開啟彈窗可查看實際大小。"))
         }
     }
 
     @ViewBuilder private var speechSettings: some View {
-            Section(text.speechOptions) {
-                Picker(text.chineseVoice, selection: $chineseVoice) {
-                    Text(text.cantonese).tag("yue-HK")
-                    Text(text.mandarin).tag("zh-TW")
-                }
-                .onChange(of: chineseVoice) { _, _ in model.syncWithPreferences() }
-                caption(text.speechCaption)
-                TranslationSpeechSettings(model: model)
+        Section {
+            Picker(text.chineseVoice, selection: $chineseVoice) {
+                Text(text.cantonese).tag("yue-HK")
+                Text(text.mandarin).tag("zh-TW")
             }
+            .onChange(of: chineseVoice) { _, _ in model.syncWithPreferences() }
+        } footer: {
+            caption(text.speechCaption)
+        }
+        TranslationSpeechSettings(model: model)
     }
 
     @ViewBuilder private var usageSettings: some View {
-        Section { GoogleTranslationUsageView() }
-            Section(text.cacheTitle) {
-                HStack {
-                    Text(text.cacheCount(model.cachedTranslationCount))
-                    Spacer()
-                    Button(text.clearCache) { model.clearTranslationCache() }
-                        .disabled(model.cachedTranslationCount == 0)
-                        .accessibilityIdentifier("clearTranslationCache")
-                }
-                caption(text.cacheCaption)
+        GoogleTranslationUsageView()
+        Section {
+            HStack {
+                Text(text.cacheCount(model.cachedTranslationCount))
+                Spacer()
+                Button(text.clearCache) { model.clearTranslationCache() }
+                    .disabled(model.cachedTranslationCount == 0)
+                    .accessibilityIdentifier("clearTranslationCache")
             }
+        } header: {
+            Text(text.cacheTitle)
+        } footer: {
+            caption(text.cacheCaption)
+        }
     }
 
     @ViewBuilder private var aboutSettings: some View {
         ReleaseUpdateSection()
-            Section(label("About PlainTranslate", "關於 PlainTranslate")) {
+        Section {
+            HStack(spacing: 16) {
+                Link("GitHub", destination: URL(string: "https://github.com/ChyoChan/PlainTranslate")!)
+                Link("GPL-3.0-or-later", destination: URL(string: "https://www.gnu.org/licenses/gpl-3.0.html")!)
+                Link(label("Original project", "原始專案"), destination: URL(string: "https://github.com/vorssaint/vorssaint-utils")!)
+            }
+        } header: {
+            Text(label("About PlainTranslate", "關於 PlainTranslate"))
+        } footer: {
+            VStack(alignment: .leading, spacing: 4) {
                 caption(label(
                     "Independent, open-source translation app. Translation components adapted from Vorssaint under GPL-3.0-or-later.",
                     "獨立開源翻譯 App。翻譯元件改編自 Vorssaint，採用 GPL-3.0-or-later 授權。"))
                 caption(label("Provided without warranty. Apple and Google provide the translation engines.",
                               "本程式不提供擔保。翻譯引擎由 Apple 及 Google 提供。"))
-                HStack {
-                    Link("GitHub", destination: URL(string: "https://github.com/ChyoChan/PlainTranslate")!)
-                    Link("GPL-3.0-or-later", destination: URL(string: "https://www.gnu.org/licenses/gpl-3.0.html")!)
-                    Link(label("Original project", "原始專案"), destination: URL(string: "https://github.com/vorssaint/vorssaint-utils")!)
-                }
             }
+        }
     }
 
     private var credentialsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(text.apiKey).font(.subheadline.weight(.medium))
-            SecureField(text.keyPlaceholder, text: $keyDraft)
+        VStack(alignment: .leading, spacing: 8) {
+            Text(text.apiKey).font(.body.weight(.medium))
+            SecureField(text.apiKey, text: $keyDraft, prompt: Text(text.keyPlaceholder))
                 .textFieldStyle(.roundedBorder)
+                .labelsHidden()
                 .textContentType(.password)
                 .privacySensitive()
                 .accessibilityLabel(text.apiKey)
                 .disabled(credentials.busy)
                 .focused($keyFocused)
-            HStack {
+            caption(credentialStatus)
+            HStack(spacing: 12) {
                 Button(text.saveKey) {
                     let draft = keyDraft
                     model.cancel()
@@ -280,10 +309,10 @@ struct SettingsView: View {
                 }
                 .disabled(credentials.busy || !credentials.hasKey)
                 if credentials.busy { ProgressView().controlSize(.small) }
+                Spacer(minLength: 8)
+                Link(label("Set up Cloud Translation API", "設定 Cloud Translation API"),
+                     destination: URL(string: "https://docs.cloud.google.com/translate/docs/setup")!)
             }
-            caption(credentialStatus)
-            Link(label("Set up Cloud Translation API", "設定 Cloud Translation API"),
-                 destination: URL(string: "https://docs.cloud.google.com/translate/docs/setup")!)
         }
     }
 
@@ -312,8 +341,9 @@ struct SettingsView: View {
     }
 
     private func caption(_ value: String) -> some View {
-        Text(value).font(.caption).foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
+        Text(value).font(.callout).foregroundStyle(.primary)
+            .fixedSize(horizontal: false, vertical: true).lineSpacing(2)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func label(_ english: String, _ chinese: String) -> String {
