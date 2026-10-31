@@ -22,6 +22,7 @@ Native editor and compact popup, shown with non-sensitive sample text:
 
 ## First version
 
+- Native macOS settings toolbar with six panes: translation, shortcuts, popup appearance, read-aloud, usage/cache and about/updates. The last pane is remembered, and popup appearance includes a live reading preview.
 - Apple on-device translation by default; no API key needed for the Apple engine.
 - Optional Google Cloud Translation Basic v2 using **each user's own API key**.
 - English, Traditional Chinese and Japanese; automatic source detection in the

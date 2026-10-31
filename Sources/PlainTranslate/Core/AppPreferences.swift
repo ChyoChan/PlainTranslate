@@ -5,6 +5,7 @@ import Foundation
 import Combine
 
 enum DefaultsKey {
+    static let settingsPane = "settingsPane"
     static let appLanguage = "interfaceLanguage"
     static let translationDoubleCopyEnabled = "translationDoubleCopyEnabled"
     static let translationCustomShortcutEnabled = "translationCustomShortcutEnabled"

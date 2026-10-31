@@ -65,8 +65,19 @@ final class InterfaceTests: XCTestCase {
             compactModel.close()
             try render(Form { ReleaseUpdateSection(model: ReleaseUpdateService(currentVersion: "0.1.3", client: GitHubReleaseClient(repository: "ChyoChan/PlainTranslate"))) }.formStyle(.grouped).environment(\.colorScheme, scheme),
                        size: NSSize(width: 680, height: 420), name: "published-updates-\(language.rawValue)-\(scheme)", directory: directory)
-            try render(SettingsView(inspectCredentials: false).environment(\.colorScheme, scheme),
-                       size: NSSize(width: 680, height: 680), name: "settings-\(language.rawValue)-\(scheme)", directory: directory)
+            let domain = "com.chyo.plaintranslate.tests.settings-render.\(UUID().uuidString)"
+            let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+            defer { defaults.removePersistentDomain(forName: domain) }
+            let navigation = SettingsNavigation(defaults: defaults)
+            for pane in SettingsPane.allCases {
+                navigation.selectPane(pane)
+                for width in [620, 840] {
+                    try render(SettingsView(pane: pane, inspectCredentials: false, navigation: navigation)
+                        .environment(\.colorScheme, scheme),
+                        size: NSSize(width: width, height: 680),
+                        name: "settings-\(pane.rawValue)-\(language.rawValue)-\(width)-\(scheme)", directory: directory)
+                }
+            }
         }
     }
 

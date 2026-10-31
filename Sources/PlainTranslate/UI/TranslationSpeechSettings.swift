@@ -12,7 +12,6 @@ struct TranslationSpeechSettings: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(text.speechOptions).font(.subheadline.weight(.medium))
             ForEach(TranslationSpeechLanguage.voiceGroups, id: \.self) { language in
                 let voices = model.availableSpeechVoices.filter { TranslationSpeechLanguage.voiceGroup($0.language) == language }
                 let selection = model.speechVoiceSelections[language] ?? ""
