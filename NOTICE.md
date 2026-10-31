@@ -6,15 +6,16 @@ PlainTranslate is an independent macOS translation application, distributed unde
 The translation request pipeline, compact/editor interface, PDF line-break
 cleanup, speech preferences, Google Cloud client, Keychain credential storage,
 monthly usage accounting, clipboard/accessibility helpers, localized text and related regression fixtures were
-adapted from the translation implementation in
+extracted from the translation feature developed by ChyoChan in their
+customized build of
 [ChyoChan/vorssaint-utils](https://github.com/ChyoChan/vorssaint-utils), at source
 commit [`749428ba531984a63b4f44dc01459058663d4db0`](https://github.com/ChyoChan/vorssaint-utils/commit/749428ba531984a63b4f44dc01459058663d4db0).
 That project is derived from
 [vorssaint/vorssaint-utils](https://github.com/vorssaint/vorssaint-utils).
 
 - Original portions: Copyright (C) 2026 Vorssaint.
-- Standalone application adaptations and original artwork: Copyright (C) 2026
-  PlainTranslate contributors.
+- Custom translation feature, standalone application adaptations and original
+  artwork: Copyright (C) 2026 PlainTranslate contributors.
 - Modifications for this standalone project began on 2026-10-27.
 
 Original copyright and SPDX notices are retained in the adapted files. The full

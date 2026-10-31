@@ -269,18 +269,9 @@ struct SettingsView: View {
             HStack(spacing: 16) {
                 Link("GitHub", destination: URL(string: "https://github.com/ChyoChan/PlainTranslate")!)
                 Link("GPL-3.0-or-later", destination: URL(string: "https://www.gnu.org/licenses/gpl-3.0.html")!)
-                Link(label("Original project", "原始專案"), destination: URL(string: "https://github.com/vorssaint/vorssaint-utils")!)
             }
         } header: {
             Text(label("About PlainTranslate", "關於 PlainTranslate"))
-        } footer: {
-            VStack(alignment: .leading, spacing: 4) {
-                caption(label(
-                    "Independent, open-source translation app. Translation components adapted from Vorssaint under GPL-3.0-or-later.",
-                    "獨立開源翻譯 App。翻譯元件改編自 Vorssaint，採用 GPL-3.0-or-later 授權。"))
-                caption(label("Provided without warranty. Apple and Google provide the translation engines.",
-                              "本程式不提供擔保。翻譯引擎由 Apple 及 Google 提供。"))
-            }
         }
     }
 
