@@ -85,7 +85,7 @@ struct TranslationDoubleCopyDetector {
     }
 }
 
-enum TranslationInputError: Error { case empty, tooLong, sensitive }
+enum TranslationInputError: Error { case empty, tooLong, sensitive, clipboardChanged }
 
 /// Bound work without splitting or rewriting the selected text.
 enum TranslationTextPlan {

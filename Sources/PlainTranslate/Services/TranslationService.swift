@@ -450,16 +450,10 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         output = ""
         readInFlight = true
         GeneralPasteboardAccess.shared.async(timeout: 1.0, { () -> Result<String, TranslationInputError>? in
-            let pasteboard = NSPasteboard.general
-            guard !requiresFreshCopy || TranslationTextPlan.isFreshCopy(baseline: baseline, current: pasteboard.changeCount)
-            else { return .failure(.empty) }
-            let types = Set((pasteboard.types ?? []).map(\.rawValue))
-            guard TranslationTextPlan.protectedTypes.isDisjoint(with: types) else {
-                return .failure(.sensitive)
-            }
-            let text = pasteboard.string(forType: .string) ?? ""
-            do { return .success(try TranslationTextPlan.validate(text, types: types)) }
-            catch let error as TranslationInputError { return .failure(error) }
+            do {
+                return .success(try GeneralPasteboardAccess.translationText(from: .general,
+                    requiringChangeAfter: baseline, requiresFreshCopy: requiresFreshCopy))
+            } catch let error as TranslationInputError { return .failure(error) }
             catch { return .failure(.empty) }
         }, then: { [weak self] result in
             guard let self, self.generation.accepts(token) else { return }
@@ -797,6 +791,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         switch error {
         case TranslationInputError.tooLong: return strings.tooLong
         case TranslationInputError.sensitive: return strings.sensitive
+        case TranslationInputError.clipboardChanged: return strings.clipboardChanged
         default: return strings.empty
         }
     }

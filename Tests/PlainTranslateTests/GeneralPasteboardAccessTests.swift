@@ -1,11 +1,47 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 PlainTranslate contributors
 
+import AppKit
 import XCTest
 @testable import PlainTranslate
 
 @MainActor
 final class GeneralPasteboardAccessTests: XCTestCase {
+    func testTranslationReadsOnlyFreshUnprotectedClipboardText() throws {
+        let board = NSPasteboard(name: .init("test.plaintranslate.\(UUID().uuidString)"))
+        defer { board.releaseGlobally() }
+        board.clearContents()
+        let baseline = board.changeCount
+        XCTAssertThrowsError(try GeneralPasteboardAccess.translationText(from: board,
+            requiringChangeAfter: baseline, requiresFreshCopy: true))
+        board.clearContents()
+        XCTAssertTrue(board.setString(" whole selection\n", forType: .string))
+        XCTAssertEqual(try GeneralPasteboardAccess.translationText(from: board,
+            requiringChangeAfter: baseline, requiresFreshCopy: true), " whole selection\n")
+        for type in TranslationTextPlan.protectedTypes {
+            board.clearContents()
+            XCTAssertTrue(board.setString("fixture_private", forType: .string))
+            XCTAssertTrue(board.setData(Data(), forType: .init(type)))
+            XCTAssertThrowsError(try GeneralPasteboardAccess.translationText(from: board)) { error in
+                guard case TranslationInputError.sensitive = error else { return XCTFail("Expected protected content rejection") }
+            }
+        }
+    }
+
+    func testClipboardReplacementDuringPromisedTextReadIsRejected() {
+        let board = NSPasteboard(name: .init("test.plaintranslate.\(UUID().uuidString)"))
+        defer { board.releaseGlobally() }
+        board.clearContents()
+        let provider = ReplacingPasteboardProvider()
+        let item = NSPasteboardItem()
+        XCTAssertTrue(item.setDataProvider(provider, forTypes: [.string]))
+        XCTAssertTrue(board.writeObjects([item]))
+        XCTAssertThrowsError(try GeneralPasteboardAccess.translationText(from: board)) { error in
+            guard case TranslationInputError.clipboardChanged = error else { return XCTFail("Expected changed clipboard rejection") }
+        }
+        XCTAssertTrue(provider.wasCalled)
+    }
+
     func testSuccessfulWorkRunsOffMainAndDeliversOnMain() async {
         let completed = expectation(description: "Result delivered")
         let finished = expectation(description: "Work finished")
@@ -91,5 +127,18 @@ final class GeneralPasteboardAccessTests: XCTestCase {
         })
         await fulfillment(of: [timedOut, blockerFinished, expiredFinished], timeout: 2)
         XCTAssertEqual(deliveries, 1)
+    }
+}
+
+private final class ReplacingPasteboardProvider: NSObject, NSPasteboardItemDataProvider {
+    var wasCalled = false
+
+    func pasteboard(_ pasteboard: NSPasteboard?, item: NSPasteboardItem,
+                    provideDataForType type: NSPasteboard.PasteboardType) {
+        wasCalled = true
+        item.setString("fixture_public", forType: type)
+        pasteboard?.clearContents()
+        pasteboard?.setString("fixture_private", forType: .string)
+        pasteboard?.setData(Data(), forType: .init("org.nspasteboard.ConcealedType"))
     }
 }
