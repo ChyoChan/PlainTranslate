@@ -278,6 +278,8 @@ struct SettingsView: View {
 
     private var credentialsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
+            GoogleAPISetupGuide(language: l10n.language)
+            Divider()
             Text(text.apiKey).font(.body.weight(.medium))
             SecureField(text.apiKey, text: $keyDraft, prompt: Text(text.keyPlaceholder))
                 .textFieldStyle(.roundedBorder)

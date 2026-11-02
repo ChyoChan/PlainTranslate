@@ -99,3 +99,57 @@ struct AppleLanguagePackSetup: View {
         }
     }
 }
+
+enum GoogleSetupStep: Int, CaseIterable {
+    case project, billing, api, key, save
+    var url: URL? {
+        switch self {
+        case .project: return URL(string: "https://console.cloud.google.com/projectcreate")
+        case .billing: return URL(string: "https://console.cloud.google.com/billing")
+        case .api: return URL(string: "https://console.cloud.google.com/apis/library/translate.googleapis.com")
+        case .key: return URL(string: "https://console.cloud.google.com/apis/credentials")
+        case .save: return nil
+        }
+    }
+    func title(_ language: AppLanguage) -> String {
+        let en = ["Create or select a project", "Enable billing", "Enable Cloud Translation API", "Create and restrict an API key", "Save the key in PlainTranslate"]
+        let zh = ["建立或選擇專案", "啟用付款帳戶", "啟用 Cloud Translation API", "建立並限制 API Key", "在 PlainTranslate 儲存金鑰"]
+        return (language == .en ? en : zh)[rawValue]
+    }
+    func instructions(_ language: AppLanguage) -> String {
+        let en = ["Sign in to Google Cloud and create a project, or select one you already own. Use the same project for every step.",
+                  "Link a billing account to that project. Google translation requests may incur charges; review pricing and set a budget or quotas.",
+                  "Select your project and enable Cloud Translation API. PlainTranslate uses Basic (v2).",
+                  "Choose Create credentials → API key. Under API restrictions, restrict it to Cloud Translation API. Copy the key; never share it or commit it to GitHub.",
+                  "Return here, paste the key into the field below and choose Save key. It is stored in macOS Keychain and checked on your first Google translation. To replace an existing key, remove it first."]
+        let zh = ["登入 Google Cloud，建立專案或選擇你擁有的專案。每個步驟都使用同一專案。",
+                  "將付款帳戶連結至該專案。Google 翻譯請求可能收費；請查看定價並設定預算或配額。",
+                  "選擇你的專案並啟用 Cloud Translation API。PlainTranslate 使用 Basic（v2）。",
+                  "選擇「建立憑證 → API 金鑰」。在「API 限制」將金鑰限制為 Cloud Translation API。複製金鑰，請勿分享或提交至 GitHub。",
+                  "返回此處，在下方貼上金鑰並按「儲存金鑰」。金鑰存於 macOS 鑰匙圈，首次 Google 翻譯時才會驗證。更換現有金鑰前須先移除舊金鑰。"]
+        return (language == .en ? en : zh)[rawValue]
+    }
+}
+
+struct GoogleAPISetupGuide: View {
+    let language: AppLanguage
+    var body: some View {
+        DisclosureGroup(language == .en ? "Create a Google API key — step by step" : "逐步建立 Google API Key") {
+            VStack(alignment: .leading, spacing: 16) {
+                ForEach(GoogleSetupStep.allCases, id: \.rawValue) { step in
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("\(step.rawValue + 1). \(step.title(language))").font(.body.weight(.medium))
+                        Text(step.instructions(language)).font(.callout).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        if let url = step.url {
+                            Link(language == .en ? "Open Google Cloud ↗" : "開啟 Google Cloud ↗", destination: url)
+                                .accessibilityLabel(step.title(language))
+                        }
+                    }
+                }
+            }
+            .padding(.top, 8)
+        }
+        .accessibilityIdentifier("googleAPISetupGuide")
+    }
+}
