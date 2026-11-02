@@ -228,7 +228,7 @@ struct TranslationPanelView: View {
             .buttonStyle(TranslationToolbarButtonStyle(isClose: true))
             .accessibilityLabel(text.close)
             .accessibilityIdentifier("translationClose")
-            .help(text.close)
+            .help(text.closeHelp)
             .keyboardShortcut(.cancelAction)
     }
 

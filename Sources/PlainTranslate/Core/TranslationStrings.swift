@@ -105,6 +105,7 @@ struct TranslationStrings {
     }
     var cancel: String { t("Cancel", "取消") }
     var close: String { t("Close", "關閉", "关闭") }
+    var closeHelp: String { t("Close (Esc when this window has keyboard focus)", "關閉（此視窗取得鍵盤焦點時可按 Esc）", "关闭（此窗口获得键盘焦点时可按 Esc）") }
     var expand: String { t("Expand to edit", "展開編輯", "展开编辑") }
     var compact: String { t("Compact view", "精簡檢視", "精简视图") }
     var swap: String { t("Swap languages", "交換語言", "交换语言") }
