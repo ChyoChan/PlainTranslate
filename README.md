@@ -1,67 +1,154 @@
-# PlainTranslate
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/logo-dark.svg">
+    <img src="docs/assets/readme/logo.svg" width="96" alt="PlainTranslate P/T logo">
+  </picture>
+</p>
 
-A small, native macOS translator with an editable side-by-side window and a
-compact translation popup. Use Apple's on-device translation or connect your
-own Google Cloud Translation API key.
+<h1 align="center">PlainTranslate</h1>
 
-**macOS 15 or later · SwiftUI and AppKit · GPL-3.0-or-later**
+<p align="center">
+  A native translator for your Mac.<br>
+  Apple on-device translation or your own Google Cloud key.
+</p>
 
-PlainTranslate is a separate application. It does not modify, replace, update,
-or import settings or credentials from Vorssaint. Its translation code and
-regression fixtures were adapted with attribution; see [NOTICE.md](NOTICE.md).
-The application code is open source. Apple and Google translation engines and
-models are provided by their respective platforms/services.
+<p align="center">
+  <a href="#install">Install</a> ·
+  <a href="#everything-it-does">Features</a> ·
+  <a href="#get-started">Setup</a> ·
+  <a href="#private-by-default">Privacy</a> ·
+  <a href="#build-it-yourself">Build</a> ·
+  <a href="https://github.com/ChyoChan/PlainTranslate/issues">Issues</a> ·
+  <a href="#繁體中文快速開始">繁體中文</a>
+</p>
 
-## Interface
+<p align="center">
+  <a href="https://github.com/ChyoChan/PlainTranslate/releases"><img src="https://img.shields.io/github/v/release/ChyoChan/PlainTranslate?include_prereleases&amp;label=preview&amp;color=4c8dff" alt="Latest preview release"></a>
+  <a href="https://github.com/ChyoChan/PlainTranslate/releases"><img src="https://img.shields.io/github/downloads/ChyoChan/PlainTranslate/total?color=4c8dff" alt="Downloads"></a>
+  <a href="https://github.com/ChyoChan/PlainTranslate/actions/workflows/ci.yml"><img src="https://github.com/ChyoChan/PlainTranslate/actions/workflows/ci.yml/badge.svg?branch=main&amp;event=push" alt="Build and test status"></a>
+  <a href="#what-you-need"><img src="https://img.shields.io/badge/macOS-15%2B%20Apple%20Silicon-black" alt="macOS 15 or later, Apple Silicon"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue" alt="GPL 3.0 or later"></a>
+</p>
 
-Native editor and compact popup, shown with non-sensitive sample text:
+<p align="center">
+  <img src="docs/editor.png" width="520" alt="PlainTranslate editor with original text and translation side by side">
+  <img src="docs/popup.png" width="300" alt="Compact translation popup with sample text">
+</p>
 
-![Editable original and translation](docs/editor.png)
+Type, paste or select text in another app. Read the translation in a side-by-side editor or a compact popup, listen to either language, and copy the result. PlainTranslate is free and open source, with no app account, telemetry or shared API key. Optional Google Cloud requests are billed to your own project.
 
-![Compact translation popup](docs/popup.png)
+**Preview status:** this README describes the development version. Published previews may contain fewer features; check the [release notes](https://github.com/ChyoChan/PlainTranslate/releases) for the version you download.
 
-## First version
+## Choose how you translate
 
-- Native macOS settings toolbar with six panes: translation, shortcuts, popup appearance, read-aloud, usage/cache and about/updates. The last pane is remembered, and popup appearance includes a live reading preview.
-- Apple on-device translation by default; no API key needed for the Apple engine.
-- Optional Google Cloud Translation Basic v2 using **each user's own API key**.
-- English, Traditional Chinese and Japanese; automatic source detection in the
-  editor. Default translation: English → Traditional Chinese.
-- Editable original text and translation in a side-by-side window, translating
-  automatically after a 0.6-second pause in typing or pasting.
-- Language tabs show the three most recent choices, remembered separately for
-  source and target. The arrow menu keeps all supported choices available.
-  Selecting a visible tab moves the underline without reordering the buttons;
-  their positions are preserved between launches.
-- Compact popup in one frame, with original above translation and a thin
-  separator between them. Each section has read-aloud at the bottom left and
-  copy at the bottom right, with adjustable width and text size and outside-click
-  dismissal. Use × to close the popup. Esc closes it when the translation
-  window has keyboard focus; otherwise use × or click outside the popup.
-- Optional double **⌘C** within 0.7 seconds to translate selected copied text.
-  Off by default so it does not compete with Vorssaint or another translator.
-- Optional custom shortcut (default **⌃⌥T**): record your own combination in
-  settings to copy and translate selected text in another app.
-- Optional PDF line-break cleanup that preserves blank paragraphs, lists,
-  indentation and table-like spacing. This is text cleanup, not PDF file import.
-- Native read-aloud with English, Cantonese, Mandarin and Japanese voice
-  preferences and adjustable speech rate.
-- Session-only translation cache: up to 20 successful results within a 500 KB UTF-8 budget, keyed by prepared text, source, target and engine. Cache hits make no engine request and add no Google usage. Clear it in Settings; locking the session, changing the saved key or quitting also clears it.
-- Manual GitHub release checks in Settings, including previews, with release notes and download links. Checks do not install or replace the app.
-- Local monthly Google submission estimate and a 90% reference-allowance reminder.
-- English and Chinese interface text with native light/dark appearance.
+| Engine | What you need | Where translation happens |
+| --- | --- | --- |
+| **Apple** — the default | Download the required language packs when prompted. No API key. | On your Mac, using Apple's Translation framework. |
+| **Google Cloud** — optional | Your own Cloud Translation API key, enabled API and billing. | Text goes directly to Google Cloud Translation Basic v2. Usage may incur charges. |
 
-No account, app server, translation history, telemetry or shared developer key.
-Read [PRIVACY.md](PRIVACY.md) for engine-specific data handling and permissions.
+Choose an engine in the translation window or in **Settings → Translation**. PlainTranslate keeps that choice and does not silently switch to Google when Apple translation is unavailable.
 
-## Build and run
+## Everything it does
 
-You need a Mac with macOS 15+, Xcode 16+ (including the macOS 15 SDK), and the
-selected Xcode command-line tools. There are no third-party package dependencies.
+### Translate and edit
 
-The build script compiles and links with the selected Xcode's macOS SDK. Use
-Xcode 26 or later for the modern native controls on macOS 26 or later; the app's
-minimum system requirement remains macOS 15.
+- **Two views.** Edit the original and translation side by side, or use a compact popup with the original above the result.
+- **Automatic translation.** Pause typing or pasting for 0.6 seconds to translate. Cancel work in progress, then use Translate to start again without editing the text.
+- **Three languages.** English, Traditional Chinese and Japanese, with automatic source detection. The default pair is English → Traditional Chinese.
+- **Remembered language tabs.** Up to four source choices, including automatic detection, and three supported target languages. Selecting a tab moves the underline without rearranging the buttons.
+- **PDF line-break cleanup.** Join wrapped lines in copied text while preserving paragraphs, lists and indentation. This works on pasted text; it is not PDF file import.
+- **Recovery actions.** Temporary failures offer manual retry. Key and language problems show setup guidance. Retrying Google requests can add usage; there is no automatic retry.
+
+### Translate selected text
+
+- **Double ⌘C.** Select text in another app and copy it twice within 0.7 seconds to open the popup.
+- **Your own shortcut.** Record a combination in Settings → Shortcuts. The default custom combination is **Control–Option–T**.
+- **Adjustable popup.** Change its width and text size, or expand into the editor without losing the original text.
+- **Pin the popup.** Keep it open while working in another app. An unpinned popup closes when you click outside. Use × to close it; Esc works when the translation window has keyboard focus.
+
+Both selected-text shortcuts are off by default and require Accessibility permission. Enable double ⌘C in only one translator to avoid opening two popups. Typing and pasting work without that permission.
+
+### Read, copy and manage usage
+
+- **Read aloud.** Listen to the original or translation with installed macOS voices. Choose English, Cantonese, Mandarin or Japanese voices and adjust the speech rate.
+- **Copy controls.** Read-aloud sits at the bottom left of each text section; copy sits at the bottom right.
+- **In-memory cache.** Repeated text can reuse a successful translation without another engine request or additional Google usage.
+- **Google usage estimate.** See this app's recorded monthly submissions and receive a reminder at 90% of the reference allowance.
+- **Native settings.** Translation, shortcuts, popup appearance, read-aloud, usage/cache and about/updates, with English and Traditional Chinese interface text.
+- **Release checks.** Manually check GitHub for updates, including previews. Download and installation remain manual.
+
+## Install
+
+Download an app archive and its **SHA256SUMS** from the [releases page](https://github.com/ChyoChan/PlainTranslate/releases). Public previews currently provide ZIP files; the locally prepared DMG has not yet been published there.
+
+1. Quit any running copy of PlainTranslate.
+2. Extract the ZIP and move **PlainTranslate.app** into **Applications**. If you have a DMG, open it and drag the app onto its Applications shortcut, then eject the disk image.
+3. Open PlainTranslate from Applications or the Dock.
+4. Choose an engine and follow the [setup steps](#get-started).
+
+To verify a download, put the archive and its matching `SHA256SUMS` in the same folder and run:
+
+```sh
+shasum -a 256 -c SHA256SUMS
+```
+
+**Current previews are not Apple-notarized.** They use a local development certificate or ad-hoc signing, rather than an Apple Developer ID distribution signature. If Gatekeeper blocks a trusted copy, attempt to open it, then go to **System Settings → Privacy & Security → Open Anyway**, if offered. See [Apple's instructions](https://support.apple.com/en-us/102445). Packaging the app as a DMG does not remove this requirement.
+
+## Uninstall
+
+Quit PlainTranslate and move it from Applications to the Trash.
+
+Settings and saved credentials are not automatically deleted. To remove the saved Google key, choose **Settings → Translation → Google → Remove key** before uninstalling. Revoke the key in Google Cloud separately if you no longer need it.
+
+## Private by default
+
+PlainTranslate has no account system, advertising, analytics or translation history. No PlainTranslate server receives your text.
+
+- **Apple stays on-device.** Language-pack downloads use Apple's system interface. Models and services are supplied by Apple, rather than included in this repository.
+- **Google is your choice.** With Google selected, typing, pasting or invoking translation sends the prepared text directly to Google. Switching to Google in the translation window also translates the existing text. The key stays in your local macOS Keychain.
+- **Clipboard access follows your action.** Selected-text shortcuts read freshly copied text and reject recognized private clipboard markers. Changes during a clipboard read are rejected. Not every app marks sensitive text, so review your selection before using Google.
+- **The cache stays in memory.** Up to 20 successful results within a 500 KB UTF-8 budget. Clear it in Settings → Usage & Cache. Quitting, locking the session, or saving/removing the Google key also clears it; closing the popup alone does not.
+- **Version checks are manual.** Checking for updates contacts GitHub without translation text or API keys. Setup links open official Google pages in your browser.
+
+Read the [privacy notes](PRIVACY.md) for permissions, network requests, stored settings and usage accounting.
+
+## What you need
+
+- An Apple Silicon Mac for the supplied preview builds
+- macOS 15 or later
+- An internet connection for initial Apple language downloads, Google translation and update checks
+- Your own Google Cloud project and API key only if you choose Google
+
+Builds use the host Mac's architecture. Intel downloads and Universal binaries are not currently provided.
+
+## Get started
+
+### Apple language packs
+
+1. Open **Settings → Translation** and choose **Apple**.
+2. Expand **Apple language packs**, then select explicit source and target languages.
+3. Check the status and choose **Download language packs…** if needed. Confirm the macOS download prompt.
+4. Return to the editor and type or paste text. First-use translation can also request language downloads.
+
+Downloads may continue in the background. If automatic detection cannot identify a short word, select the source language explicitly and try again. Local translation does not fall back to Google.
+
+### Your Google API key
+
+Open **Settings → Translation**, select **Google**, and expand **Create a Google API key — step by step**. The guide links to each official setup page:
+
+1. **Create or select a project.** Use that same project throughout setup.
+2. **Enable billing.** Link a billing account and review your budget and quotas.
+3. **Enable Cloud Translation API.** PlainTranslate uses **Basic (v2)**.
+4. **Create and restrict an API key.** Restrict its API access to Cloud Translation API.
+5. **Save the key in PlainTranslate.** Paste it into the key field and choose Save key. To replace an existing key, remove it first. The first Google translation checks whether the key works.
+
+Project creation, billing and key creation happen on Google's website. The app does not supply a shared key or require a service-account JSON file. Google's [setup instructions](https://docs.cloud.google.com/translate/docs/setup), [key practices](https://docs.cloud.google.com/docs/authentication/api-keys-best-practices) and [pricing](https://cloud.google.com/translate/pricing) explain the service requirements.
+
+The monthly usage display is a **local estimate**, not a Google Cloud billing meter. It counts submitted Unicode code points, including spaces, line breaks, and requests that fail or are cancelled after submission. It excludes other apps and devices. Months reset in Hong Kong time. The reminder uses 450,000 of a 500,000-character reference allowance; it does not stop requests or prevent charges. Check actual usage and current allowances in your own Google Cloud project.
+
+## Build it yourself
+
+Install **Xcode 16 or later**, with the macOS 15 SDK or newer and its command-line tools selected. There are no third-party package dependencies. Xcode 26 or later enables modern native controls when running on macOS 26 or later; the minimum supported OS remains macOS 15.
 
 ```sh
 git clone https://github.com/ChyoChan/PlainTranslate.git
@@ -71,171 +158,80 @@ cd PlainTranslate
 open build/PlainTranslate.app
 ```
 
-`build.sh` builds for the host Mac's architecture and packages the app. Without
-a configured signing identity it uses an **ad-hoc signature**; those builds can
-require renewed Accessibility permission whenever their code changes.
-
-For stable signing on your own Mac, run this setup once before building:
-
-```sh
-./Tools/SetupLocalSigning.sh
-./build.sh
-```
-
-Setup creates a dedicated, self-signed **PlainTranslate Local Development**
-certificate in your existing default user Keychain, or reuses that identity.
-Its private key is imported as non-extractable with access restricted to
-`/usr/bin/codesign`. Temporary key files are removed when setup exits; no
-Keychain password is read or saved. The ignored `.local-signing-identity` file
-contains only the public certificate fingerprint. Subsequent builds in this
-checkout reuse it and fail if it cannot sign, rather than falling back to
-ad-hoc signing. Setup also verifies that two changed test apps retain the same
-certificate-bound signing requirement. Keep this Keychain identity: deleting
-or replacing it requires a new Accessibility grant. A new checkout can rerun
-setup to reuse the existing identity.
-
-Switching from an ad-hoc build requires one new Accessibility grant in
-**System Settings → Privacy & Security → Accessibility**. Later local updates
-signed with the same certificate and bundle identifier should retain it.
-Setup does not change system trust settings, grant permissions, modify other
-apps, or create a new Keychain.
-
-Neither signing mode notarizes the app. Downloaded preview builds may still be
-blocked by Gatekeeper. Local signing is not Developer ID signing or Apple
-notarization; public-distribution signing is a separate release step. CI uses
-ad-hoc signing and does not receive your local private key.
-
-To install the built app in `/Applications`, quit an existing PlainTranslate
-instance, then run:
+To install a local build, quit the running app first:
 
 ```sh
 ./build.sh --install
 open /Applications/PlainTranslate.app
 ```
 
-The install option only targets `/Applications/PlainTranslate.app` and refuses
-to replace an app with a different bundle identity or a symbolic link. It does
-not touch Vorssaint. Settings and saved keys remain when replacing PlainTranslate.
+<details>
+<summary>Keep Accessibility permission across local rebuilds</summary>
 
-Developers with their own signing identity can set
-`PLAINTRANSLATE_SIGNING_IDENTITY` for a local build. The script does not submit
-that build to Apple's notarization service.
-
-## Use Apple translation
-
-1. Open PlainTranslate from its menu-bar icon.
-2. Keep the engine set to **Apple**.
-3. Choose the languages, then type or paste text. Translation starts automatically
-   after a 0.6-second pause; input-method composition waits until committed.
-4. Allow macOS to download required language models if prompted.
-
-Downloaded models are shared by Apple's Translation framework. Language
-availability depends on macOS; the app shows an error instead of silently
-sending text to Google if local translation cannot run.
-
-## Connect your Google Cloud key
-
-1. In your own Google Cloud project, enable **Cloud Translation API** and set up
-   billing if Google requires it for that project.
-2. Create an API key, restrict its API access to **Cloud Translation API**, and
-   review the project's quotas and billing alerts.
-3. In PlainTranslate settings, select **Google Cloud Translation** and save the
-   key. The key is stored in your local macOS Keychain.
-4. Choose **Google** in the editor or popup. Editing text automatically translates
-   after a 0.6-second pause; choosing an engine in the translation window also
-   translates existing text. Each submitted Google request may incur charges.
-
-Google requests are sent directly to the official API and are billed to your
-project under Google's current terms. PlainTranslate provides no shared quota.
-Do not commit API keys or service-account files to this repository. Basic v2
-does not require importing a service-account JSON file into this app.
-
-The local usage estimate counts submitted source Unicode code points and
-attempts, including failures after submission. It **does not equal Google Cloud
-billing** and does not include other apps or devices. Monthly rollover uses
-Hong Kong time. The 90% reminder uses 450,000 of a 500,000-character reference
-allowance; it is not a hard quota or a charge-prevention mechanism.
-
-Official setup references:
-[Cloud Translation authentication](https://docs.cloud.google.com/translate/docs/authentication),
-[API key practices](https://docs.cloud.google.com/docs/authentication/api-keys-best-practices),
-[pricing](https://cloud.google.com/translate/pricing).
-
-## Enable quick translation
-
-Enable **Translate on double ⌘C** in settings, then grant Accessibility permission
-to PlainTranslate if requested. Select text in another app and copy it twice in
-0.7 seconds. The popup can switch to the full editor without losing the text.
-
-If another translator also uses double ⌘C, enable that shortcut in only one app
-to avoid two popups. PlainTranslate does not change the other app's settings.
-Manual typing/pasting works without Accessibility permission. Selecting Google
-means a triggered translation sends the selected text to Google.
-
-Alternatively, enable **Custom translation shortcut** in settings. Click the
-shortcut button and press a key with Command, Control or Option; Escape cancels
-recording. The default is **Control–Option–T**. Select text in another app and
-press your shortcut. PlainTranslate sends that app a Copy command, then translates
-only freshly copied, unprotected text with the currently selected engine.
-Accessibility permission is required. If another app already uses the combination,
-settings shows a conflict so you can choose a different one. Both shortcut options
-are off by default and can be enabled independently.
-
-## Tests
+Without a configured identity, `build.sh` uses ad-hoc signing. Changed builds can require a fresh Accessibility grant. Create or reuse a dedicated local signing identity once:
 
 ```sh
-swift test
+./Tools/SetupLocalSigning.sh
+./build.sh
 ```
 
-Tests cover double-copy timing/freshness, cancellation identities, compact
-dismissal and layout bounds, PDF cleanup, speech language preferences, API-key
-validation, complete-selection Google requests, sanitized errors, failed and
-cancelled submission accounting, concurrent local counters, and Hong Kong
-month boundaries. Google tests use fake transports and dummy keys. Preference
-tests use isolated temporary defaults domains. No paid API request, actual
-Keychain access, voice download, or audible speech is needed.
+Setup keeps a self-signed **PlainTranslate Local Development** identity in your existing user Keychain. The ignored `.local-signing-identity` file contains only its public certificate fingerprint. Subsequent builds reuse it and fail if signing is unavailable, rather than falling back to ad-hoc signing.
 
-GitHub Actions builds and tests on macOS. Its downloadable artifact preserves
-the app's executable permissions; it is an unnotarized development artifact.
-Actual Apple translation and system permission dialogs require manual testing
-on a Mac with the needed language models installed.
+Switching from an ad-hoc build, or replacing the certificate, requires a new Accessibility grant. Keep the same certificate and bundle identity for later updates. Setup does not grant permissions or change system trust settings. Local signing is not Developer ID signing or Apple notarization.
 
-## Project layout
+An existing signing identity can also be selected with `PLAINTRANSLATE_SIGNING_IDENTITY`. The build script does not submit apps for notarization. CI uses ad-hoc signing and never receives your local signing key.
 
-```text
-Sources/PlainTranslate/   Native app, translation services, settings and UI
-Tests/PlainTranslateTests/  Isolated XCTest regressions
-Resources/               App bundle metadata
-Tools/                   Icon generation and optional local signing setup
-build.sh                 Independent build and optional installation
+</details>
+
+### Tests
+
+```sh
+./build.sh --test
 ```
 
-The project builds from this repository alone and has no dependency on a local
-Vorssaint checkout. Do not include actual copied text, credentials, screenshots
-of sensitive content, or personal preference files in bug reports or patches.
+Tests cover translation requests, cancellation, recovery actions, language choices, popup behavior, setup guides, speech preferences, usage estimates and cache boundaries. Google tests use fake transports and dummy keys. Keychain tests use temporary keychains; clipboard tests use separate named pasteboards. UI fixtures use non-sensitive sample text.
+
+Tests do not make paid Google requests or download language packs. Actual Apple translation, download consent, permissions and fresh-machine installation need manual checks. GitHub Actions runs the tests and builds a standalone app; its artifact is not notarized.
+
+## When something misbehaves
+
+| Problem | What to check |
+| --- | --- |
+| macOS blocks the download | Follow the [installation notes](#install). Current previews are not notarized. |
+| A selected-text shortcut does nothing | Enable it in Settings → Shortcuts, then allow **PlainTranslate** under **Privacy & Security → Accessibility**. Restart the app after granting access if needed. |
+| Apple needs language packs | Use Settings → Translation → Apple language packs, or follow the first-use system prompt. |
+| A short word cannot be detected | Select the source language explicitly. Names and words shared by languages can be ambiguous. |
+| Google rejects the key or request | Check the project, enabled API, key restrictions, billing and quotas in Google Cloud. |
+| Saving reports an existing key | Use Remove key before saving a replacement. Failed saves preserve the existing item. |
+| Esc does not close an unfocused popup | Click ×, or click outside an unpinned popup. Esc applies when the translation window has keyboard focus. |
+
+For a bug report, include your macOS version, app version, selected engine and steps to reproduce. Use non-sensitive sample text; leave out API keys and personal clipboard content.
+
+## Documentation
+
+- [Privacy](PRIVACY.md), what stays on your Mac and what each engine sends
+- [Attribution and external services](NOTICE.md), code origins and platform licensing
+- [Artwork](Resources/Brand/README.md), app icons and editable SVG masters
+- [Tests](Tests/PlainTranslateTests), regression fixtures
+- [Build workflow](.github/workflows/ci.yml), automated checks and app packaging
 
 ## 繁體中文快速開始
 
-PlainTranslate 是獨立的 Mac 翻譯 App，不會修改 Vorssaint。
+1. 從 [Releases](https://github.com/ChyoChan/PlainTranslate/releases) 下載預覽版，解壓 ZIP 並將 App 移至 Applications；使用 DMG 時，將 App 拖到 Applications 後退出映像檔。
+2. 目前預覽版尚未經 Apple 公證。如被攔截，核對來源後到「系統設定 → 隱私權與安全性 → 仍要打開」。
+3. 在「設定 → 翻譯」選 Apple，展開「Apple 語言包」下載所需語言；或選 Google，依五步指南建立並儲存你自己的 API Key。
+4. 在編輯視窗輸入或貼上文字，停止輸入約 0.6 秒後自動翻譯。取消後可按「翻譯」重新開始。
+5. 如需翻譯其他 App 的選取文字，在「設定 → 快捷鍵」啟用雙按 ⌘C 或自訂快捷鍵，並授予 PlainTranslate「輔助使用」權限。
+6. Google 可能收費；本機用量提醒不等於 GCP 帳單，也不會阻止收費。公開預覽版的功能以各版本發佈說明為準。
 
-1. 依照上方指令建置，開啟 `build/PlainTranslate.app`。
-2. 預設使用 Apple 本機翻譯；首次使用某些語言時，按系統提示下載語言模型。
-3. 如需 Google 翻譯，在設定選擇 Google，儲存你自己的 Cloud Translation API key。
-4. 在編輯視窗輸入或貼上文字，停止輸入約 0.6 秒後自動翻譯；可用「精簡視窗」顯示原文與譯文彈窗。
-5. 雙按 ⌘C 預設關閉；如需使用，在設定啟用並授予「輔助使用」權限。
-6. Google 用量僅為這個 App 的本機估算，實際額度及費用請查看自己的 GCP 專案。
+## Community
 
-目前安裝包採用本機簽署，尚未經 Apple 公證。Apple／Google 的翻譯模型本身不包含在開源範圍內。
-
-## Brand assets
-
-The P/T mark combines the app's initials using a transparent T inside a P. The
-complete [logo kit and usage guide](Brand/README.md) includes original outlined
-SVG artwork, black/white variants, app icons and web icons under GPL-3.0-or-later.
+[Bug reports](https://github.com/ChyoChan/PlainTranslate/issues), feature ideas, translations and pull requests are welcome. Keep changes focused and run `./build.sh --test` before submitting code. A GitHub star helps other people find the app.
 
 ## License
 
-[GNU General Public License v3.0 or later](LICENSE). Retain the attribution and
-license notices when redistributing or modifying this application. Published
-binaries must be accompanied by access to their corresponding source under
-the GPL. See [NOTICE.md](NOTICE.md) for upstream attribution and original artwork.
+[GNU GPL 3.0 or later](LICENSE), copyright 2026 PlainTranslate contributors and the authors identified in [NOTICE.md](NOTICE.md). Retain the copyright and license notices, and provide corresponding source when distributing modified binaries. Apple and Google translation models and services are external to the open-source application.
+
+<p align="center">
+  <sub>Made by <a href="https://github.com/ChyoChan">ChyoChan</a></sub>
+</p>
