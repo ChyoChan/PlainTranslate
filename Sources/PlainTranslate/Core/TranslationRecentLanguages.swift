@@ -32,12 +32,12 @@ enum TranslationRecentLanguages {
     }
 
     private static func ordered(_ values: [String], forSource: Bool) -> [String] {
-        let fallback = forSource ? ["en", "ja", "zh-Hant"] : ["zh-Hant", "en", "ja"]
+        let fallback = forSource ? ["en", "ja", "zh-Hant", "auto"] : TranslationLanguageDefaults.languages
         let allowed = Set(TranslationLanguageDefaults.languages + (forSource ? ["auto"] : []))
         var result: [String] = []
         for language in values + fallback where allowed.contains(language) && !result.contains(language) {
             result.append(language)
-            if result.count == 3 { break }
+            if result.count == 4 { break }
         }
         return result
     }

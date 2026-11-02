@@ -76,13 +76,19 @@ final class SettingsNavigationTests: XCTestCase {
         XCTAssertTrue(back.label.contains("返回"))
         XCTAssertTrue(back.label.contains("翻譯"))
         XCTAssertEqual(controller.tabViewItems.first?.label, "翻譯")
+        for (language, backTitle, translationTitle) in [(AppLanguage.zhHans, "返回翻译", "翻译"), (.ja, "翻訳に戻る", "翻訳")] {
+            L10n.shared.setLanguage(language)
+            XCTAssertEqual(window.toolbar?.items.first { $0.itemIdentifier.rawValue == "settings.back" }?.label, backTitle)
+            XCTAssertEqual(controller.tabViewItems.first?.label, translationTitle)
+            XCTAssertTrue(window.title.contains(SettingsPane.appearance.title(for: language)))
+        }
         L10n.shared.setLanguage(.en)
         XCTAssertTrue(window.title.contains(SettingsPane.appearance.title(for: .en)))
         XCTAssertEqual(window.toolbar?.items.first { $0.itemIdentifier.rawValue == "settings.back" }?.label,
                        "Back to translation")
         XCTAssertEqual(controller.tabViewItems.first?.label, "Translation")
         XCTAssertFalse(window.isVisible)
-        for language in [AppLanguage.en, .zhHK, .zhTW] {
+        for language in AppLanguage.allCases {
             XCTAssertEqual(Set(SettingsPane.allCases.map { $0.title(for: language) }).count, 6)
             XCTAssertTrue(SettingsPane.allCases.allSatisfy { !$0.title(for: language).isEmpty && !$0.symbol.isEmpty })
         }
@@ -127,6 +133,10 @@ final class SettingsNavigationTests: XCTestCase {
         let cases: [(String, AppLanguage, NSAppearance.Name)] = [
             ("native-settings-hk-dark", .zhHK, .darkAqua),
             ("native-settings-en-light", .en, .aqua),
+            ("native-settings-hans-dark", .zhHans, .darkAqua),
+            ("native-settings-hans-light", .zhHans, .aqua),
+            ("native-settings-ja-dark", .ja, .darkAqua),
+            ("native-settings-ja-light", .ja, .aqua),
         ]
         func render(_ name: String, language: AppLanguage, appearance: NSAppearance.Name) throws {
             L10n.shared.setLanguage(language)

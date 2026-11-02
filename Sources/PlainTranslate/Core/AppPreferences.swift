@@ -44,13 +44,43 @@ enum AppPreferences {
     }
 }
 
-enum AppLanguage: String {
-    case en = "en", zhHK = "zh-HK", zhTW = "zh-TW", zhHans = "zh-Hans"
-    static var system: AppLanguage {
-        guard let preferred = Locale.preferredLanguages.first else { return .en }
-        // The first release offers English and Traditional Chinese interface copy.
-        if preferred.hasPrefix("zh-TW") { return .zhTW }
-        return preferred.hasPrefix("zh") ? .zhHK : .en
+enum AppLanguage: String, CaseIterable {
+    case en = "en", zhHK = "zh-HK", zhTW = "zh-TW", zhHans = "zh-Hans", ja = "ja"
+
+    var displayName: String {
+        switch self {
+        case .en: return "English"
+        case .zhHK: return "繁體中文（香港）"
+        case .zhTW: return "繁體中文（台灣）"
+        case .zhHans: return "简体中文"
+        case .ja: return "日本語"
+        }
+    }
+
+    static var system: AppLanguage { preferred(in: Locale.preferredLanguages) }
+
+    static func preferred(in identifiers: [String]) -> AppLanguage {
+        for identifier in identifiers {
+            let locale = Locale.Language(identifier: identifier)
+            switch locale.languageCode?.identifier {
+            case "en": return .en
+            case "ja": return .ja
+            case "zh":
+                if locale.script?.identifier == "Hans" { return .zhHans }
+                return locale.region?.identifier == "TW" ? .zhTW : .zhHK
+            default: continue
+            }
+        }
+        return .en
+    }
+
+    func text(_ english: String, _ traditional: String, _ simplified: String, _ japanese: String) -> String {
+        switch self {
+        case .en: return english
+        case .zhHK, .zhTW: return traditional
+        case .zhHans: return simplified
+        case .ja: return japanese
+        }
     }
 }
 
@@ -61,7 +91,6 @@ final class L10n: ObservableObject {
             if language != oldValue { UserDefaults.standard.set(language.rawValue, forKey: DefaultsKey.appLanguage) }
         }
     }
-    var isChinese: Bool { language != .en }
 
     private init() {
         language = UserDefaults.standard.string(forKey: DefaultsKey.appLanguage).flatMap(AppLanguage.init(rawValue:)) ?? .system

@@ -28,7 +28,7 @@ final class TranslationCoreTests: XCTestCase {
         XCTAssertEqual(TranslationLanguageDefaults.source, "en")
         XCTAssertEqual(TranslationLanguageDefaults.target, "zh-Hant")
         XCTAssertEqual(TranslationRequest(text: "Hello", source: nil, target: "zh-Hant").engine, .apple)
-        XCTAssertEqual(Set(TranslationLanguageDefaults.languages), ["en", "zh-Hant", "ja"])
+        XCTAssertEqual(Set(TranslationLanguageDefaults.languages), ["en", "zh-Hant", "ja", "zh-Hans"])
     }
 
     func testDoubleCopyRequiresFreshPairInSameApplication() {

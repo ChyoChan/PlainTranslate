@@ -24,6 +24,7 @@ struct TranslationPanelView: View {
                 editorContent
             }
         }
+        .environment(\.locale, Locale(identifier: l10n.language.rawValue))
         .background(Color(nsColor: .windowBackgroundColor))
         .ignoresSafeArea()
         .background {
@@ -111,8 +112,8 @@ struct TranslationPanelView: View {
                         Image(systemName: "gearshape")
                     }
                     .buttonStyle(TranslationToolbarButtonStyle())
-                    .help(l10n.language == .en ? "Settings" : "設定")
-                    .accessibilityLabel(l10n.language == .en ? "Settings" : "設定")
+                    .help(l10n.language.text("Settings", "設定", "设置", "設定"))
+                    .accessibilityLabel(l10n.language.text("Settings", "設定", "设置", "設定"))
                     .accessibilityIdentifier("translationSettings")
                     presentationButton
                     closeButton

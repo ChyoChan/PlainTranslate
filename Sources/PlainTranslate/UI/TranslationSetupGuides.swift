@@ -24,23 +24,21 @@ struct AppleLanguagePackSetup: View {
     @State private var configuration: TranslationSession.Configuration?
     @State private var busy = false
     @State private var failed = false
-    private func label(_ en: String, _ zh: String) -> String { language == .en ? en : zh }
 
     var body: some View {
-        DisclosureGroup(label("Apple language packs", "Apple 語言包")) {
+        DisclosureGroup(language.text("Apple language packs", "Apple 語言包", "Apple 语言包", "Apple の言語パック")) {
             VStack(alignment: .leading, spacing: 12) {
-                Text(label("Choose both languages, then allow macOS to download them. An internet connection is needed for downloads; translation stays on this Mac.",
-                           "選擇原文及譯文語言，然後允許 macOS 下載。下載需要網絡連線；翻譯會在此 Mac 上進行。"))
+                Text(language.text("Choose both languages, then allow macOS to download them. An internet connection is needed for downloads; translation stays on this Mac.", "選擇原文及譯文語言，然後允許 macOS 下載。下載需要網絡連線；翻譯會在此 Mac 上進行。", "选择原文和译文语言，然后允许 macOS 下载。下载需要联网；翻译在此 Mac 上进行。", "原文と訳文の言語を選び、macOS のダウンロードを許可してください。ダウンロードにはインターネット接続が必要です。翻訳はこの Mac 上で行います。"))
                     .font(.callout).foregroundStyle(.secondary)
                 HStack {
-                    languagePicker(label("From", "原文"), selection: $pair.source)
+                    languagePicker(language.text("From", "原文", "原文", "原文"), selection: $pair.source)
                     Image(systemName: "arrow.right").accessibilityHidden(true)
-                    languagePicker(label("To", "譯文"), selection: $pair.target)
+                    languagePicker(language.text("To", "譯文", "译文", "訳文"), selection: $pair.target)
                 }
                 .disabled(busy)
                 Text(status).font(.callout).accessibilityIdentifier("appleLanguagePackStatus")
                 HStack {
-                    Button(label("Download language packs…", "下載語言包…")) {
+                    Button(language.text("Download language packs…", "下載語言包…", "下载语言包…", "言語パックをダウンロード…")) {
                         guard let request = pair.configuration else { return }
                         failed = false
                         busy = true
@@ -79,15 +77,15 @@ struct AppleLanguagePackSetup: View {
     }
 
     private var status: String {
-        if !pair.isSupportedChoice { return label("Choose two different languages.", "請選擇兩種不同的語言。") }
-        if busy { return label("Follow the macOS download prompt…", "請按 macOS 的下載提示操作…") }
-        if failed { return label("Setup did not finish. Check your connection and try again. Downloads may continue in the background.", "設定未完成，請檢查網絡後重試。下載可能仍在背景進行。") }
+        if !pair.isSupportedChoice { return language.text("Choose two different languages.", "請選擇兩種不同的語言。", "请选择两种不同的语言。", "異なる 2 つの言語を選んでください。") }
+        if busy { return language.text("Follow the macOS download prompt…", "請按 macOS 的下載提示操作…", "请按 macOS 的下载提示操作…", "macOS のダウンロード画面に従ってください…") }
+        if failed { return language.text("Setup did not finish. Check your connection and try again. Downloads may continue in the background.", "設定未完成，請檢查網絡後重試。下載可能仍在背景進行。", "设置未完成，请检查网络后重试。下载可能仍在后台进行。", "設定を完了できませんでした。接続を確認して再試行してください。ダウンロードはバックグラウンドで続いている場合があります。") }
         switch availability {
-        case .installed: return label("Ready for on-device translation.", "已可使用本機翻譯。")
-        case .supported: return label("Language packs are needed or still downloading. Use the button to open Apple's download prompt.", "需要語言包，或下載仍在進行。按下方按鈕開啟 Apple 下載提示。")
-        case .unsupported: return label("Apple does not support this language pair on this Mac.", "此 Mac 的 Apple 翻譯不支援這個語言組合。")
-        case nil: return label("Checking language packs…", "正在檢查語言包…")
-        @unknown default: return label("Language availability is unknown. Try another pair.", "未能確認語言支援狀態，請選擇其他組合。")
+        case .installed: return language.text("Ready for on-device translation.", "已可使用本機翻譯。", "已可使用本地翻译。", "この Mac で翻訳できます。")
+        case .supported: return language.text("Language packs are needed or still downloading. Use the button to open Apple's download prompt.", "需要語言包，或下載仍在進行。按下方按鈕開啟 Apple 下載提示。", "需要语言包，或下载仍在进行。按下方按钮打开 Apple 下载提示。", "言語パックが必要か、ダウンロード中です。下のボタンで Apple のダウンロード画面を開けます。")
+        case .unsupported: return language.text("Apple does not support this language pair on this Mac.", "此 Mac 的 Apple 翻譯不支援這個語言組合。", "此 Mac 的 Apple 翻译不支持此语言组合。", "この Mac の Apple 翻訳は、この言語の組み合わせに対応していません。")
+        case nil: return language.text("Checking language packs…", "正在檢查語言包…", "正在检查语言包…", "言語パックを確認中…")
+        @unknown default: return language.text("Language availability is unknown. Try another pair.", "未能確認語言支援狀態，請選擇其他組合。", "无法确认语言支持状态，请选择其他组合。", "言語の対応状況を確認できません。別の組み合わせをお試しください。")
         }
     }
 
@@ -114,7 +112,9 @@ enum GoogleSetupStep: Int, CaseIterable {
     func title(_ language: AppLanguage) -> String {
         let en = ["Create or select a project", "Enable billing", "Enable Cloud Translation API", "Create and restrict an API key", "Save the key in PlainTranslate"]
         let zh = ["建立或選擇專案", "啟用付款帳戶", "啟用 Cloud Translation API", "建立並限制 API Key", "在 PlainTranslate 儲存金鑰"]
-        return (language == .en ? en : zh)[rawValue]
+        let hans = ["创建或选择项目", "启用结算", "启用 Cloud Translation API", "创建并限制 API Key", "在 PlainTranslate 保存密钥"]
+        let ja = ["プロジェクトを作成・選択", "課金を有効にする", "Cloud Translation API を有効にする", "API キーを作成して制限", "PlainTranslate にキーを保存"]
+        return language.text(en[rawValue], zh[rawValue], hans[rawValue], ja[rawValue])
     }
     func instructions(_ language: AppLanguage) -> String {
         let en = ["Sign in to Google Cloud and create a project, or select one you already own. Use the same project for every step.",
@@ -127,14 +127,24 @@ enum GoogleSetupStep: Int, CaseIterable {
                   "選擇你的專案並啟用 Cloud Translation API。PlainTranslate 使用 Basic（v2）。",
                   "選擇「建立憑證 → API 金鑰」。在「API 限制」將金鑰限制為 Cloud Translation API。複製金鑰，請勿分享或提交至 GitHub。",
                   "返回此處，在下方貼上金鑰並按「儲存金鑰」。金鑰存於 macOS 鑰匙圈，首次 Google 翻譯時才會驗證。更換現有金鑰前須先移除舊金鑰。"]
-        return (language == .en ? en : zh)[rawValue]
+        let hans = ["登录 Google Cloud，创建项目或选择你拥有的项目。每个步骤都使用同一项目。",
+                    "将结算账号关联至该项目。Google 翻译请求可能收费；请查看价格并设置预算或配额。",
+                    "选择你的项目并启用 Cloud Translation API。PlainTranslate 使用 Basic（v2）。",
+                    "选择“创建凭据 → API 密钥”。在“API 限制”中将密钥限制为 Cloud Translation API。复制密钥，请勿分享或提交到 GitHub。",
+                    "返回此处，在下方粘贴密钥并点击“保存密钥”。密钥保存在 macOS 钥匙串，首次 Google 翻译时验证。更换现有密钥前须先移除旧密钥。"]
+        let ja = ["Google Cloud にログインし、プロジェクトを作成するか、所有するプロジェクトを選んでください。すべての手順で同じプロジェクトを使います。",
+                  "そのプロジェクトに請求先アカウントをリンクします。Google 翻訳のリクエストには料金が発生する場合があります。料金を確認し、予算や割り当てを設定してください。",
+                  "プロジェクトを選び、Cloud Translation API を有効にします。PlainTranslate は Basic（v2）を使用します。",
+                  "「認証情報を作成 → API キー」を選びます。「API の制限」で Cloud Translation API のみに制限してください。キーをコピーし、他人への共有や GitHub へのコミットは避けてください。",
+                  "ここに戻り、下の欄にキーを貼り付けて「キーを保存」を押してください。キーは macOS キーチェーンに保存し、最初の Google 翻訳時に確認します。交換する場合は先に既存のキーを削除してください。"]
+        return language.text(en[rawValue], zh[rawValue], hans[rawValue], ja[rawValue])
     }
 }
 
 struct GoogleAPISetupGuide: View {
     let language: AppLanguage
     var body: some View {
-        DisclosureGroup(language == .en ? "Create a Google API key — step by step" : "逐步建立 Google API Key") {
+        DisclosureGroup(language.text("Create a Google API key — step by step", "逐步建立 Google API Key", "逐步创建 Google API Key", "Google API キーの設定手順")) {
             VStack(alignment: .leading, spacing: 16) {
                 ForEach(GoogleSetupStep.allCases, id: \.rawValue) { step in
                     VStack(alignment: .leading, spacing: 5) {
@@ -142,7 +152,7 @@ struct GoogleAPISetupGuide: View {
                         Text(step.instructions(language)).font(.callout).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                         if let url = step.url {
-                            Link(language == .en ? "Open Google Cloud ↗" : "開啟 Google Cloud ↗", destination: url)
+                            Link(language.text("Open Google Cloud ↗", "開啟 Google Cloud ↗", "打开 Google Cloud ↗", "Google Cloud を開く ↗"), destination: url)
                                 .accessibilityLabel(step.title(language))
                         }
                     }

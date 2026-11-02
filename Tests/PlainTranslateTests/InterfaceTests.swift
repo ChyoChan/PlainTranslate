@@ -30,7 +30,7 @@ final class InterfaceTests: XCTestCase {
         if let directory {
             try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
         }
-        for (language, scheme) in [(AppLanguage.en, ColorScheme.light), (.en, .dark), (.zhHK, .light), (.zhHK, .dark)] {
+        for (language, scheme) in [(AppLanguage.en, ColorScheme.light), (.en, .dark), (.zhHK, .light), (.zhHK, .dark), (.zhHans, .light), (.zhHans, .dark), (.ja, .light), (.ja, .dark)] {
             L10n.shared.setLanguage(language)
             for (name, mode, size) in [
                 ("compact", TranslationPresentation.compact, NSSize(width: 630, height: 520)),

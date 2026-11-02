@@ -29,6 +29,19 @@ final class GoogleTranslationTests: XCTestCase {
         XCTAssertNil(body["key"])
     }
 
+    func testChineseScriptsUseDistinctGoogleCodesInBothDirections() throws {
+        let languages = ["en": "en", "ja": "ja", "zh-Hant": "zh-TW", "zh-Hans": "zh-CN"]
+        for (source, googleSource) in languages {
+            for (target, googleTarget) in languages {
+                let http = try GoogleTranslationClient.makeRequest(text: "原文。", source: source, target: target, key: fakeKey)
+                let body = try XCTUnwrap(try JSONSerialization.jsonObject(with: XCTUnwrap(http.httpBody)) as? [String: Any])
+                XCTAssertEqual(body["source"] as? String, googleSource)
+                XCTAssertEqual(body["target"] as? String, googleTarget)
+                XCTAssertEqual(body["q"] as? [String], ["原文。"])
+            }
+        }
+    }
+
     func testHTMLIsDecodedOnceAsPlainText() {
         XCTAssertEqual(GoogleTranslationClient.decodeEntities("&lt;b&gt;A &amp; B&lt;/b&gt; &#39; &#x4E2D; &amp;lt; &unknown;"),
                        "<b>A & B</b> ' 中 &lt; &unknown;")

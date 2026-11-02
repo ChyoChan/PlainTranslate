@@ -50,6 +50,7 @@ struct SettingsView: View {
                 if !busy { focusGoogleCredentials(using: proxy) }
             }
         }
+        .environment(\.locale, Locale(identifier: l10n.language.rawValue))
         .toggleStyle(.switch)
         .frame(minWidth: 620, minHeight: 480)
         .background(Color(nsColor: .windowBackgroundColor))
@@ -93,12 +94,12 @@ struct SettingsView: View {
             }
         }
         Section {
-            Picker(label("Interface language", "介面語言"), selection: Binding(
+            Picker(l10n.language.text("Interface language", "介面語言", "界面语言", "表示言語"), selection: Binding(
                 get: { l10n.language }, set: { l10n.setLanguage($0) }
             )) {
-                Text("English").tag(AppLanguage.en)
-                Text("繁體中文（香港）").tag(AppLanguage.zhHK)
-                Text("繁體中文（台灣）").tag(AppLanguage.zhTW)
+                ForEach(AppLanguage.allCases, id: \.rawValue) { language in
+                    Text(language.displayName).tag(language)
+                }
             }
         }
     }
@@ -114,18 +115,17 @@ struct SettingsView: View {
                 caption(text.caption)
             }
         } footer: {
-            caption(label("Enable double ⌘C in only one translation app to avoid duplicate popups.",
-                          "請只在一個翻譯 App 啟用雙 ⌘C，避免重複彈窗。"))
+            caption(l10n.language.text("Enable double ⌘C in only one translation app to avoid duplicate popups.", "請只在一個翻譯 App 啟用雙 ⌘C，避免重複彈窗。", "请只在一个翻译 App 中启用双按 ⌘C，避免重复弹窗。", "ポップアップの重複を避けるため、⌘C の 2 回押しは 1 つの翻訳アプリだけで有効にしてください。"))
         }
         Section {
-            Toggle(label("Custom translation shortcut", "自訂翻譯快捷鍵"), isOn: $customShortcutEnabled)
+            Toggle(l10n.language.text("Custom translation shortcut", "自訂翻譯快捷鍵", "自定义翻译快捷键", "翻訳ショートカットをカスタマイズ"), isOn: $customShortcutEnabled)
                 .onChange(of: customShortcutEnabled) { _, _ in
                     permissions.refresh()
                     model.syncWithPreferences()
                 }
             if customShortcutEnabled {
                 VStack(alignment: .leading, spacing: 8) {
-                    LabeledContent(label("Shortcut", "快捷鍵")) {
+                    LabeledContent(l10n.language.text("Shortcut", "快捷鍵", "快捷键", "ショートカット")) {
                         HStack(spacing: 12) {
                             TranslationShortcutRecorder(shortcut: $shortcut, onRecordingChanged: model.setRecordingShortcut)
                                 .frame(width: 180, height: 30)
@@ -133,14 +133,12 @@ struct SettingsView: View {
                                     value.save(to: .standard)
                                     model.syncWithPreferences()
                                 }
-                            Button(label("Reset", "重設")) { shortcut = .defaultValue }
+                            Button(l10n.language.text("Reset", "重設", "重置", "リセット")) { shortcut = .defaultValue }
                         }
                     }
-                    caption(label("Click to record a shortcut with ⌘, ⌃ or ⌥. Press Esc to cancel.",
-                                  "按快捷鍵欄位錄製，須包含 ⌘、⌃ 或 ⌥；按 Esc 取消。"))
+                    caption(l10n.language.text("Click to record a shortcut with ⌘, ⌃ or ⌥. Press Esc to cancel.", "按快捷鍵欄位錄製，須包含 ⌘、⌃ 或 ⌥；按 Esc 取消。", "点击快捷键栏进行录制，须包含 ⌘、⌃ 或 ⌥；按 Esc 取消。", "欄をクリックして、⌘、⌃、⌥ のいずれかを含むキーを押してください。Esc でキャンセルできます。"))
                     if model.customShortcutUnavailable {
-                        Label(label("This shortcut is unavailable or used by another app. Choose another combination.",
-                                    "此快捷鍵無法使用或已被其他 App 佔用，請選擇其他組合。"),
+                        Label(l10n.language.text("This shortcut is unavailable or used by another app. Choose another combination.", "此快捷鍵無法使用或已被其他 App 佔用，請選擇其他組合。", "此快捷键不可用或已被其他 App 占用，请选择其他组合。", "このショートカットは使用できないか、別のアプリで使われています。別の組み合わせを選んでください。"),
                               systemImage: "exclamationmark.triangle")
                             .font(.callout).fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("translationShortcutConflict")
@@ -151,17 +149,16 @@ struct SettingsView: View {
         if doubleCopy || customShortcutEnabled {
             Section {
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    Label(permissions.accessibility ? label("Accessibility access granted", "已授予輔助使用權限") : text.permission,
+                    Label(permissions.accessibility ? l10n.language.text("Accessibility access granted", "已授予輔助使用權限", "已授予辅助功能权限", "アクセシビリティは許可済みです") : text.permission,
                           systemImage: permissions.accessibility ? "checkmark.circle" : "lock.shield")
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 8)
                     if !permissions.accessibility {
-                        Button(label("Open Accessibility Settings…", "開啟輔助使用設定…")) { permissions.requestAccessibility() }
+                        Button(l10n.language.text("Open Accessibility Settings…", "開啟輔助使用設定…", "打开辅助功能设置…", "アクセシビリティ設定を開く…")) { permissions.requestAccessibility() }
                     }
                 }
             } footer: {
-                caption(label("Select text in another app, then use the shortcut. Typing and pasting work without permission.",
-                              "在其他 App 選取文字後按快捷鍵翻譯；未授權仍可輸入或貼上。"))
+                caption(l10n.language.text("Select text in another app, then use the shortcut. Typing and pasting work without permission.", "在其他 App 選取文字後按快捷鍵翻譯；未授權仍可輸入或貼上。", "在其他 App 选中文字后按快捷键翻译；未授权仍可输入或粘贴。", "ほかのアプリでテキストを選び、ショートカットを使ってください。入力や貼り付けには権限は不要です。"))
             }
         }
     }
@@ -212,7 +209,7 @@ struct SettingsView: View {
                     .font(.body).frame(maxWidth: .infinity, alignment: .leading)
                     .padding(16)
                 Divider()
-                Text("讓每個想法，都有清晰的表達空間。")
+                Text(l10n.language.text("讓每個想法，都有清晰的表達空間。", "讓每個想法，都有清晰的表達空間。", "让每个想法，都有清晰的表达空间。", "どんな思いも、すっきり伝わる。"))
                     .font(.system(size: TranslationCompactLayout.fontSize(popupFontSize)))
                     .frame(maxWidth: .infinity, alignment: .leading).padding(16)
                 HStack {
@@ -227,10 +224,9 @@ struct SettingsView: View {
             .frame(maxWidth: .infinity)
             .accessibilityIdentifier("translationAppearancePreview")
         } header: {
-            Text(label("Reading preview", "閱讀預覽"))
+            Text(l10n.language.text("Reading preview", "閱讀預覽", "阅读预览", "表示プレビュー"))
         } footer: {
-            caption(label("Preview width is limited by this pane. Open the popup for its actual size.",
-                          "預覽受面板寬度限制；開啟彈窗可查看實際大小。"))
+            caption(l10n.language.text("Preview width is limited by this pane. Open the popup for its actual size.", "預覽受面板寬度限制；開啟彈窗可查看實際大小。", "预览受面板宽度限制；打开弹窗可查看实际大小。", "プレビューの幅は設定画面に合わせて表示します。実際のサイズはポップアップで確認してください。"))
         }
     }
 
@@ -272,7 +268,7 @@ struct SettingsView: View {
                 Link("GPL-3.0-or-later", destination: URL(string: "https://www.gnu.org/licenses/gpl-3.0.html")!)
             }
         } header: {
-            Text(label("About PlainTranslate", "關於 PlainTranslate"))
+            Text(l10n.language.text("About PlainTranslate", "關於 PlainTranslate", "关于 PlainTranslate", "PlainTranslate について"))
         }
     }
 
@@ -304,7 +300,7 @@ struct SettingsView: View {
                 .disabled(credentials.busy || !credentials.hasKey)
                 if credentials.busy { ProgressView().controlSize(.small) }
                 Spacer(minLength: 8)
-                Link(label("Set up Cloud Translation API", "設定 Cloud Translation API"),
+                Link(l10n.language.text("Set up Cloud Translation API", "設定 Cloud Translation API", "设置 Cloud Translation API", "Cloud Translation API を設定"),
                      destination: URL(string: "https://docs.cloud.google.com/translate/docs/setup")!)
             }
         }
@@ -341,7 +337,4 @@ struct SettingsView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func label(_ english: String, _ chinese: String) -> String {
-        l10n.language == .en ? english : chinese
-    }
 }

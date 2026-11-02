@@ -10,7 +10,7 @@ enum TranslationEngine: String {
 enum TranslationLanguageDefaults {
     static let source = "en"
     static let target = "zh-Hant"
-    static let languages = ["zh-Hant", "en", "ja"]
+    static let languages = ["zh-Hant", "en", "ja", "zh-Hans"]
 }
 
 /// Presentation is independent of the request: expanding must not restart a

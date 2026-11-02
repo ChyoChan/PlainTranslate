@@ -9,14 +9,13 @@ enum SettingsPane: String, CaseIterable {
     case translation, shortcuts, appearance, speech, usage, about
 
     func title(for language: AppLanguage) -> String {
-        let chinese = language != .en
         switch self {
-        case .translation: return chinese ? "翻譯" : "Translation"
-        case .shortcuts: return chinese ? "快捷鍵" : "Shortcuts"
-        case .appearance: return chinese ? "彈窗外觀" : "Popup"
-        case .speech: return chinese ? "朗讀" : "Read Aloud"
-        case .usage: return chinese ? "用量與暫存" : "Usage & Cache"
-        case .about: return chinese ? "關於與更新" : "About & Updates"
+        case .translation: return language.text("Translation", "翻譯", "翻译", "翻訳")
+        case .shortcuts: return language.text("Shortcuts", "快捷鍵", "快捷键", "ショートカット")
+        case .appearance: return language.text("Popup", "彈窗外觀", "弹窗外观", "ポップアップ")
+        case .speech: return language.text("Read Aloud", "朗讀", "朗读", "読み上げ")
+        case .usage: return language.text("Usage & Cache", "用量與暫存", "用量与缓存", "使用量とキャッシュ")
+        case .about: return language.text("About & Updates", "關於與更新", "关于与更新", "情報とアップデート")
         }
     }
 

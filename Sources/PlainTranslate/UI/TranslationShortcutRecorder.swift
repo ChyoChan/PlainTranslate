@@ -6,6 +6,7 @@ import SwiftUI
 
 struct TranslationShortcutRecorder: NSViewRepresentable {
     @Binding var shortcut: TranslationShortcut
+    @ObservedObject private var l10n = L10n.shared
     var onRecordingChanged: (Bool) -> Void = { _ in }
 
     func makeNSView(context: Context) -> RecorderButton {
@@ -25,13 +26,14 @@ struct TranslationShortcutRecorder: NSViewRepresentable {
     private func apply(to button: RecorderButton, enabled: Bool) {
         button.shortcut = shortcut
         button.isEnabled = enabled
-        button.isChinese = L10n.shared.isChinese
+        button.language = l10n.language
         button.capture = { shortcut = $0 }
         button.recordingChanged = onRecordingChanged
-        button.setAccessibilityLabel(L10n.shared.isChinese ? "設定翻譯快捷鍵" : "Set translation shortcut")
-        button.toolTip = L10n.shared.isChinese
-            ? "按一下後輸入快捷鍵；Esc 取消。須包含 ⌘、⌃ 或 ⌥。"
-            : "Click and press a shortcut; Escape cancels. Include Command, Control or Option."
+        button.setAccessibilityLabel(l10n.language.text("Set translation shortcut", "設定翻譯快捷鍵", "设置翻译快捷键", "翻訳ショートカットを設定"))
+        button.toolTip = l10n.language.text("Click and press a shortcut; Escape cancels. Include Command, Control or Option.",
+                                           "按一下後輸入快捷鍵；Esc 取消。須包含 ⌘、⌃ 或 ⌥。",
+                                           "点击后输入快捷键；按 Esc 取消。须包含 ⌘、⌃ 或 ⌥。",
+                                           "クリックしてキーを押してください。Esc でキャンセル。Command、Control、Option のいずれかを含めてください。")
         if !enabled { button.stopRecording() }
         button.refreshTitle()
     }
@@ -44,7 +46,7 @@ struct TranslationShortcutRecorder: NSViewRepresentable {
 
     final class RecorderButton: NSButton {
         var shortcut = TranslationShortcut.defaultValue
-        var isChinese = false
+        var language = AppLanguage.en
         var capture: ((TranslationShortcut) -> Void)?
         var recordingChanged: ((Bool) -> Void)?
         private var recording = false
@@ -76,7 +78,7 @@ struct TranslationShortcutRecorder: NSViewRepresentable {
         }
 
         func refreshTitle() {
-            title = recording ? (isChinese ? "請按快捷鍵…" : "Press shortcut…") : shortcut.displayString
+            title = recording ? language.text("Press shortcut…", "請按快捷鍵…", "请按快捷键…", "キーを押してください…") : shortcut.displayString
         }
 
         override func performKeyEquivalent(with event: NSEvent) -> Bool {

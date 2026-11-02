@@ -15,17 +15,17 @@ struct PlainTranslateApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            Button(label("Open translator…", "開啟翻譯…")) {
+            Button(l10n.language.text("Open translator…", "開啟翻譯…", "打开翻译…", "翻訳を開く…")) {
                 TranslationService.shared.open()
             }
-            Button(label("Translate copied text", "翻譯已複製文字")) {
+            Button(l10n.language.text("Translate copied text", "翻譯已複製文字", "翻译已复制文字", "コピーしたテキストを翻訳")) {
                 TranslationService.shared.useCopiedText(presentation: .compact)
             }
             Divider()
-            Button(label("Settings…", "設定…")) { SettingsNavigation.shared.show() }
+            Button(l10n.language.text("Settings…", "設定…", "设置…", "設定…")) { SettingsNavigation.shared.show() }
                 .keyboardShortcut(",", modifiers: .command)
             Divider()
-            Button(label("Quit PlainTranslate", "結束 PlainTranslate")) {
+            Button(l10n.language.text("Quit PlainTranslate", "結束 PlainTranslate", "退出 PlainTranslate", "PlainTranslate を終了")) {
                 NSApplication.shared.terminate(nil)
             }
             .keyboardShortcut("q", modifiers: .command)
@@ -39,15 +39,12 @@ struct PlainTranslateApp: App {
         }
         .commands {
             CommandGroup(replacing: .appSettings) {
-                Button(label("Settings…", "設定…")) { SettingsNavigation.shared.show() }
+                Button(l10n.language.text("Settings…", "設定…", "设置…", "設定…")) { SettingsNavigation.shared.show() }
                     .keyboardShortcut(",", modifiers: .command)
             }
         }
     }
 
-    private func label(_ english: String, _ chinese: String) -> String {
-        l10n.language == .en ? english : chinese
-    }
 }
 
 final class PlainTranslateDelegate: NSObject, NSApplicationDelegate {

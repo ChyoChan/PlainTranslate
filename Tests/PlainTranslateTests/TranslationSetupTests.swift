@@ -8,10 +8,10 @@ import XCTest
 
 final class TranslationSetupTests: XCTestCase {
     func testDownloadsRequireTwoExplicitSupportedDifferentLanguages() {
-        for source in ["auto", "en", "zh-Hant", "ja", "unknown"] {
-            for target in ["auto", "en", "zh-Hant", "ja", "unknown"] {
+        for source in ["auto", "en", "zh-Hant", "ja", "zh-Hans", "unknown"] {
+            for target in ["auto", "en", "zh-Hant", "ja", "zh-Hans", "unknown"] {
                 let pair = AppleSetupPair(source: source, target: target)
-                let allowed = source != target && ["en", "zh-Hant", "ja"].contains(source) && ["en", "zh-Hant", "ja"].contains(target)
+                let allowed = source != target && ["en", "zh-Hant", "ja", "zh-Hans"].contains(source) && ["en", "zh-Hant", "ja", "zh-Hans"].contains(target)
                 XCTAssertEqual(pair.isSupportedChoice, allowed)
                 XCTAssertEqual(pair.configuration != nil, allowed)
             }
@@ -28,7 +28,7 @@ final class TranslationSetupTests: XCTestCase {
                 XCTAssertNil(step.url?.user)
                 XCTAssertNil(step.url?.query)
             }
-            for language in [AppLanguage.en, .zhHK, .zhTW] {
+            for language in AppLanguage.allCases {
                 XCTAssertFalse(step.title(language).isEmpty)
                 XCTAssertFalse(step.instructions(language).isEmpty)
             }
@@ -39,7 +39,7 @@ final class TranslationSetupTests: XCTestCase {
     @MainActor
     func testGuidesRenderWithoutStartingDownloadsOrOpeningBrowser() throws {
         _ = NSApplication.shared
-        for language in [AppLanguage.en, .zhHK, .zhTW] {
+        for language in AppLanguage.allCases {
             let content = VStack {
                 AppleLanguagePackSetup(language: language)
                 GoogleAPISetupGuide(language: language)

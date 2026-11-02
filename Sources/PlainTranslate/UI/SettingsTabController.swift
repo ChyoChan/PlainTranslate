@@ -97,7 +97,7 @@ final class SettingsTabController: NSTabViewController {
     }
 
     private func backTitle(for language: AppLanguage) -> String {
-        language == .en ? "Back to translation" : "返回翻譯"
+        language.text("Back to translation", "返回翻譯", "返回翻译", "翻訳に戻る")
     }
 
     private func updateLabels(for language: AppLanguage) {
