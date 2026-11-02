@@ -314,6 +314,7 @@ struct SettingsView: View {
         case .removed: return text.keyRemoved
         case .failed: return text.keychainFailed
         case .invalid: return text.keyInvalid
+        case .exists: return text.keyExists
         }
     }
 

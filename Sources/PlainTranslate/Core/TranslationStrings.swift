@@ -148,6 +148,7 @@ struct TranslationStrings {
     var translationUnavailable: String { t("Unable to translate", "無法翻譯", "无法翻译") }
     var keyRemoved: String { t("Key removed from macOS Keychain.", "已從 macOS 鑰匙圈移除金鑰。", "已从 macOS 钥匙串移除密钥。") }
     var keyInvalid: String { t("Check the API key. It must not contain spaces or other non-key characters.", "請檢查 API Key，不應包含空格或其他非金鑰字元。", "请检查 API Key，不应包含空格或其他非密钥字符。") }
+    var keyExists: String { t("A key already exists. Remove it before saving a new key.", "已有金鑰，請先移除再儲存新金鑰。", "已有密钥，请先移除再保存新密钥。") }
     var keychainFailed: String { t("Could not access macOS Keychain. Unlock it or allow access, then try again.", "無法存取 macOS 鑰匙圈，請解鎖或允許存取後重試。", "无法访问 macOS 钥匙串，请解锁或允许访问后重试。") }
     func googleError(_ error: GoogleTranslationError) -> String {
         switch error {
