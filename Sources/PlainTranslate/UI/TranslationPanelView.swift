@@ -72,6 +72,10 @@ struct TranslationPanelView: View {
         .accessibilityLabel("PlainTranslate")
     }
 
+    private var showsTranslationAction: Bool {
+        model.busy || (model.output.isEmpty && !model.input.isEmpty && model.message == nil)
+    }
+
     private var compactContent: some View {
         VStack(spacing: 10) {
             HStack(spacing: 10) {
@@ -87,11 +91,8 @@ struct TranslationPanelView: View {
             resultText(compact: true)
                 .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
                 .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(nsColor: .separatorColor)))
-            if model.busy || (model.output.isEmpty && !model.input.isEmpty) {
-                Button(model.busy ? text.cancel : text.translate) {
-                    if model.busy { model.cancel() }
-                    else { model.translate() }
-                }
+            if showsTranslationAction {
+                translationActionButton
                 .controlSize(.large)
                 .frame(maxWidth: .infinity, alignment: .trailing)
             }
@@ -156,12 +157,20 @@ struct TranslationPanelView: View {
         }
     }
 
+    private var translationActionButton: some View {
+        Button(model.busy ? text.cancel : text.translate) {
+            if model.busy { model.cancel() }
+            else { model.translate() }
+        }
+        .accessibilityIdentifier(model.busy ? "translationCancel" : "translationStart")
+    }
+
     private func languageActions(_ part: TranslationSpeechPart) -> some View {
         HStack {
             speechButton(part)
             Spacer(minLength: 8)
-            if part == .original, model.busy, model.presentation == .editor {
-                Button(text.cancel) { model.cancel() }.font(.callout)
+            if part == .original, model.presentation == .editor, showsTranslationAction {
+                translationActionButton.font(.callout)
                 Spacer(minLength: 8)
             }
             copyButton(part)
@@ -292,7 +301,7 @@ struct TranslationPanelView: View {
                     if compact {
                         GeometryReader { geometry in
                             // Include the action row here so its visibility also updates the fitted height.
-                            let actionHeight: CGFloat = model.busy || (model.output.isEmpty && !model.input.isEmpty) ? 42 : 0
+                            let actionHeight: CGFloat = showsTranslationAction ? 42 : 0
                             Color.clear.preference(key: TranslationResultHeight.self,
                                                    value: geometry.size.height + 116 + actionHeight)
                         }

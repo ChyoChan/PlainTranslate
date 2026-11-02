@@ -3,6 +3,7 @@
 
 import AppKit
 import SwiftUI
+import Vision
 import XCTest
 @testable import PlainTranslate
 
@@ -149,6 +150,67 @@ final class InterfaceTests: XCTestCase {
                        "The original and its controls must remain reachable by scrolling up")
         XCTAssertEqual(model.input, original)
         XCTAssertFalse(model.output.isEmpty)
+    }
+
+    @MainActor
+    func testCancelledTranslationShowsRestartInBothPresentations() async throws {
+        _ = NSApplication.shared
+        try prepareBrandMarkForUITests()
+        let defaults = UserDefaults.standard
+        let previous = defaults.volatileDomain(forName: UserDefaults.argumentDomain)
+        let previousLanguage = L10n.shared.language
+        var fixture = previous
+        fixture[DefaultsKey.translationEngine] = TranslationEngine.google.rawValue
+        defaults.setVolatileDomain(fixture, forName: UserDefaults.argumentDomain)
+        L10n.shared.setLanguage(.en)
+        defer {
+            defaults.setVolatileDomain(previous, forName: UserDefaults.argumentDomain)
+            L10n.shared.setLanguage(previousLanguage)
+        }
+        for mode in [TranslationPresentation.compact, .editor] {
+            var submissions: [TranslationRequest] = []
+            let model = TranslationService(presentation: mode, googleTranslation: { request in
+                submissions.append(request)
+                return "Fixture translation."
+            })
+            model.input = "Resume this text without editing."
+            model.translate()
+            let cancelled = try XCTUnwrap(model.request)
+            model.cancel()
+            XCTAssertNil(model.request)
+            let size = NSSize(width: 880, height: 620)
+            let host = NSHostingView(rootView: TranslationPanelView(model: model))
+            let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.contentView = host
+            host.setFrameSize(size)
+            defer { window.close(); model.close() }
+            host.layoutSubtreeIfNeeded()
+            try await Task.sleep(nanoseconds: 100_000_000)
+            let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            let recognition = VNRecognizeTextRequest()
+            recognition.recognitionLanguages = ["en-US"]
+            recognition.recognitionLevel = .accurate
+            recognition.usesLanguageCorrection = false
+            try VNImageRequestHandler(cgImage: XCTUnwrap(bitmap.cgImage), options: [:]).perform([recognition])
+            let labels = (recognition.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+            XCTAssertTrue(labels.contains("Translate"), "Cancelled \(mode) must offer Translate without editing; found \(labels)")
+            if let directory = ProcessInfo.processInfo.environment["PLAINTRANSLATE_PREVIEW_DIR"] {
+                let png = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+                try png.write(to: URL(fileURLWithPath: directory).appendingPathComponent("cancelled-\(mode).png"))
+            }
+            XCTAssertTrue(submissions.isEmpty, "Cancelling must not restart automatically")
+            model.translate()
+            let deadline = Date().addingTimeInterval(2)
+            while model.output.isEmpty, Date() < deadline { try await Task.sleep(nanoseconds: 1_000_000) }
+            XCTAssertEqual(submissions.count, 1)
+            XCTAssertEqual(submissions.first?.text, cancelled.text)
+            XCTAssertEqual(submissions.first?.engine, .google)
+            XCTAssertEqual(model.output, "Fixture translation.")
+            model.finish(cancelled.id, result: .success("Stale result"))
+            XCTAssertEqual(model.output, "Fixture translation.")
+        }
     }
 
     @MainActor
