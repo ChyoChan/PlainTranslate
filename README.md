@@ -18,8 +18,14 @@
   <a href="#get-started">Setup</a> ·
   <a href="#private-by-default">Privacy</a> ·
   <a href="#build-it-yourself">Build</a> ·
-  <a href="https://github.com/ChyoChan/PlainTranslate/issues">Issues</a> ·
-  <a href="#繁體中文快速開始">繁體中文</a>
+  <a href="https://github.com/ChyoChan/PlainTranslate/issues">Issues</a>
+</p>
+
+<p align="center">
+  <strong>English</strong> ·
+  <a href="#繁體中文快速開始">繁體中文</a> ·
+  <a href="README.zh-CN.md">简体中文</a> ·
+  <a href="README.ja.md">日本語</a>
 </p>
 
 <p align="center">
@@ -54,8 +60,8 @@ Choose an engine in the translation window or in **Settings → Translation**. P
 
 - **Two views.** Edit the original and translation side by side, or use a compact popup with the original above the result.
 - **Automatic translation.** Pause typing or pasting for 0.6 seconds to translate. Cancel work in progress, then use Translate to start again without editing the text.
-- **Three languages.** English, Traditional Chinese and Japanese, with automatic source detection. The default pair is English → Traditional Chinese.
-- **Remembered language tabs.** Up to four source choices, including automatic detection, and three supported target languages. Selecting a tab moves the underline without rearranging the buttons.
+- **Four languages.** English, Traditional Chinese, Simplified Chinese and Japanese, with automatic source detection. The default pair is English → Traditional Chinese.
+- **Remembered language tabs.** Up to four choices on each side, including automatic detection on the source side. Selecting a tab moves the underline without rearranging the buttons.
 - **PDF line-break cleanup.** Join wrapped lines in copied text while preserving paragraphs, lists and indentation. This works on pasted text; it is not PDF file import.
 - **Recovery actions.** Temporary failures offer manual retry. Key and language problems show setup guidance. Retrying Google requests can add usage; there is no automatic retry.
 
@@ -74,7 +80,7 @@ Both selected-text shortcuts are off by default and require Accessibility permis
 - **Copy controls.** Read-aloud sits at the bottom left of each text section; copy sits at the bottom right.
 - **In-memory cache.** Repeated text can reuse a successful translation without another engine request or additional Google usage.
 - **Google usage estimate.** See this app's recorded monthly submissions and receive a reminder at 90% of the reference allowance.
-- **Native settings.** Translation, shortcuts, popup appearance, read-aloud, usage/cache and about/updates, with English and Traditional Chinese interface text.
+- **Native settings.** Translation, shortcuts, popup appearance, read-aloud, usage/cache and about/updates, with English, Traditional Chinese, Simplified Chinese and Japanese interface text. The first launch follows your system language; change it in Settings → Translation → Interface language.
 - **Release checks.** Manually check GitHub for updates, including previews. Download and installation remain manual.
 
 ## Install
@@ -222,7 +228,8 @@ For a bug report, include your macOS version, app version, selected engine and s
 3. 在「設定 → 翻譯」選 Apple，展開「Apple 語言包」下載所需語言；或選 Google，依五步指南建立並儲存你自己的 API Key。
 4. 在編輯視窗輸入或貼上文字，停止輸入約 0.6 秒後自動翻譯。取消後可按「翻譯」重新開始。
 5. 如需翻譯其他 App 的選取文字，在「設定 → 快捷鍵」啟用雙按 ⌘C 或自訂快捷鍵，並授予 PlainTranslate「輔助使用」權限。
-6. Google 可能收費；本機用量提醒不等於 GCP 帳單，也不會阻止收費。公開預覽版的功能以各版本發佈說明為準。
+6. 可在「設定 → 翻譯 → 介面語言」切換英文、繁體中文、簡體中文或日文；翻譯語言也支援這四種語言。
+7. Google 可能收費；本機用量提醒不等於 GCP 帳單，也不會阻止收費。公開預覽版的功能以各版本發佈說明為準。
 
 ## Community
 
