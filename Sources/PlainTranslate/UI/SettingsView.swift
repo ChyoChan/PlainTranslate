@@ -84,6 +84,7 @@ struct SettingsView: View {
                 caption(model.privacyNotice)
             }
             if model.engine == .google { credentialsSection.id(Self.googleCredentialsID) }
+            else { AppleLanguagePackSetup(language: l10n.language) }
         }
         Section {
             VStack(alignment: .leading, spacing: 8) {
