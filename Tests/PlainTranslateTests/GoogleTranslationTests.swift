@@ -67,6 +67,36 @@ final class GoogleTranslationTests: XCTestCase {
         }
     }
 
+    func testReasonSpecificHTTPFailuresPreserveActionableErrors() async {
+        let fixtures: [(Int, String, GoogleTranslationError)] = [
+            (403, #"{"error":{"errors":[{"reason":"dailyLimitExceeded"}]}}"#, .quota),
+            (403, #"{"error":{"errors":[{"reason":"userRateLimitExceeded"}]}}"#, .quota),
+            (403, #"{"error":{"message":"Daily Limit Exceeded"}}"#, .quota),
+            (403, #"{"error":{"message":"User Rate Limit Exceeded"}}"#, .quota),
+            (403, #"{"error":{"status":"RESOURCE_EXHAUSTED"}}"#, .quota),
+            (403, #"{"error":{"details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"RATE_LIMIT_EXCEEDED"}]}}"#, .quota),
+            (400, #"{"error":{"errors":[{"reason":"keyInvalid"}]}}"#, .invalidKey),
+            (400, #"{"error":{"message":"PRIVATE_DETAIL","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"API_KEY_INVALID"}]}}"#, .invalidKey),
+            (400, #"{"error":{"details":[{"@type":"other.Type","reason":"API_KEY_INVALID"}]}}"#, .invalidRequest),
+            (403, #"{"error":{"errors":[{"reason":"accessNotConfigured"}]}}"#, .denied),
+            (400, #"{"error":{"message":"PRIVATE_DETAIL","errors":[{"reason":"badRequest"}]}}"#, .invalidRequest),
+            (503, #"{"error":{"errors":[{"reason":"keyInvalid"}]}}"#, .unavailable),
+        ]
+        for (status, body, expected) in fixtures {
+            var calls = 0
+            let client = GoogleTranslationClient(recordUsage: { _ in }) { http in
+                calls += 1
+                return (Data(body.utf8), HTTPURLResponse(url: http.url!, statusCode: status, httpVersion: nil, headerFields: nil)!)
+            }
+            do { _ = try await client.translate(request, key: fakeKey); XCTFail("Failure returned translated text") }
+            catch {
+                XCTAssertEqual(error as? GoogleTranslationError, expected)
+                XCTAssertFalse(String(describing: error).contains("PRIVATE_DETAIL"))
+            }
+            XCTAssertEqual(calls, 1, "Failure classification must not automatically retry")
+        }
+    }
+
     func testMalformedResponseCannotPublishPartialSuccess() async {
         for body in ["{}", "{\"data\":{\"translations\":[]}}", "not JSON", "{\"data\":{\"translations\":[{},{}]}}"] {
             let client = GoogleTranslationClient(recordUsage: { _ in }) { http in
