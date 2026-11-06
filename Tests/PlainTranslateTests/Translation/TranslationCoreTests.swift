@@ -97,12 +97,13 @@ final class TranslationCoreTests: XCTestCase {
 
     func testOutsideClickPolicyPreservesMenusModalPanelsAndEditor() {
         for mode in [TranslationPresentation.compact, .editor] {
-            for mask in 0..<32 {
+            for mask in 0..<64 {
                 let visible = mask & 1 != 0, inside = mask & 2 != 0
                 let menu = mask & 4 != 0, modal = mask & 8 != 0, keyboard = mask & 16 != 0
-                XCTAssertEqual(TranslationDismissalPolicy.shouldDismiss(presentation: mode, isVisible: visible,
+                let pinned = mask & 32 != 0
+                XCTAssertEqual(TranslationDismissalPolicy.shouldDismiss(presentation: mode, isVisible: visible, isPinned: pinned,
                     clickIsInside: inside, menuIsTracking: menu, hasModal: modal, isAssistiveKeyboard: keyboard),
-                    mode == .compact && visible && !inside && !menu && !modal && !keyboard)
+                    mode == .compact && visible && !pinned && !inside && !menu && !modal && !keyboard)
             }
         }
     }

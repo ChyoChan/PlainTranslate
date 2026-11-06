@@ -20,6 +20,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     @Published private(set) var output = ""
     @Published private(set) var message: String?
     @Published private(set) var googleFailure: GoogleTranslationError?
+    @Published private(set) var isPinned = false
     @Published private(set) var busy = false
     @Published private(set) var copied = false
     @Published private(set) var copiedOriginal = false
@@ -323,6 +324,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         // Release visible text and the engine session; bounded cache entries live until purge or exit.
         panel?.contentView = nil
         panel = nil
+        isPinned = false
     }
 
     func windowWillClose(_ notification: Notification) { close() }
@@ -334,9 +336,15 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         panel?.orderOut(nil)
     }
 
+    func togglePin() {
+        guard presentation == .compact else { return }
+        isPinned.toggle()
+        updateDismissMonitors()
+    }
+
     private func updateDismissMonitors() {
         removeDismissMonitors()
-        guard presentation == .compact else { return }
+        guard presentation == .compact, !isPinned, panel?.isVisible == true else { return }
         NotificationCenter.default.publisher(for: NSMenu.didBeginTrackingNotification)
             .sink { [weak self] _ in self?.trackingMenus += 1 }
             .store(in: &menuSubscriptions)
@@ -375,7 +383,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
             if event.window == nil { inside = panel.frame.contains(NSEvent.mouseLocation) }
         }
         guard TranslationDismissalPolicy.shouldDismiss(
-            presentation: presentation, isVisible: panel.isVisible, clickIsInside: inside,
+            presentation: presentation, isVisible: panel.isVisible, isPinned: isPinned, clickIsInside: inside,
             menuIsTracking: trackingMenus > 0,
             hasModal: panel.attachedSheet != nil || NSApp.modalWindow != nil,
             isAssistiveKeyboard: !isLocal && AssistiveKeyboard.ownsCocoaPoint(NSEvent.mouseLocation))

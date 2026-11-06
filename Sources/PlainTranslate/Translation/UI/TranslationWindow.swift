@@ -46,10 +46,10 @@ enum TranslationCompactLayout {
 }
 
 enum TranslationDismissalPolicy {
-    static func shouldDismiss(presentation: TranslationPresentation, isVisible: Bool,
+    static func shouldDismiss(presentation: TranslationPresentation, isVisible: Bool, isPinned: Bool = false,
                               clickIsInside: Bool, menuIsTracking: Bool,
                               hasModal: Bool, isAssistiveKeyboard: Bool) -> Bool {
-        presentation == .compact && isVisible && !clickIsInside &&
+        presentation == .compact && isVisible && !isPinned && !clickIsInside &&
             !menuIsTracking && !hasModal && !isAssistiveKeyboard
     }
 }

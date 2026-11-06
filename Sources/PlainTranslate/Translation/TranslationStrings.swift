@@ -80,6 +80,10 @@ struct TranslationStrings {
     var speechVoiceMissing: String {
         language.text("No installed voice matches this language. Download a voice in System Settings → Accessibility → Read & Speak, then try again.", "找不到此語言的已安裝語音。請到「系統設定 → 輔助使用 → 閱讀與朗讀」下載相應語音，再試朗讀。", "找不到此语言的已安装语音。请到“系统设置 → 辅助功能 → 朗读与语音”下载相应语音，再试朗读。", "この言語に対応する音声がありません。「システム設定 → アクセシビリティ → リーダーと読み上げ」で音声をダウンロードしてからお試しください。")
     }
+    var pinPopup: String { language.text("Pin window — keep open when clicking outside", "固定視窗：點擊外部時保持開啟", "固定窗口：点击外部时保持打开", "ウインドウを固定：外側をクリックしても開いたままにする") }
+    var unpinPopup: String { language.text("Unpin window — close when clicking outside", "取消固定：點擊外部時關閉", "取消固定：点击外部时关闭", "固定を解除：外側をクリックすると閉じる") }
+    var pinned: String { language.text("Pinned", "已固定", "已固定", "固定済み") }
+    var notPinned: String { language.text("Not pinned", "未固定", "未固定", "未固定") }
     var cancel: String { language.text("Cancel", "取消", "取消", "キャンセル") }
     var close: String { language.text("Close", "關閉", "关闭", "閉じる") }
     var closeHelp: String { language.text("Close (Esc when this window has keyboard focus)", "關閉（此視窗取得鍵盤焦點時可按 Esc）", "关闭（此窗口获得键盘焦点时可按 Esc）", "閉じる（このウインドウにキーボードフォーカスがある場合は Esc）") }

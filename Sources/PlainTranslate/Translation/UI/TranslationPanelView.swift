@@ -80,6 +80,7 @@ struct TranslationPanelView: View {
                 enginePicker
                 Spacer(minLength: 0)
                 HStack(spacing: 8) {
+                    pinButton
                     presentationButton
                     closeButton
                 }
@@ -223,6 +224,18 @@ struct TranslationPanelView: View {
         .accessibilityIdentifier(compact ? "translationEditView" : "translationCompactView")
     }
 
+    private var pinButton: some View {
+        Button { model.togglePin() } label: {
+            Image(systemName: model.isPinned ? "pin.fill" : "pin")
+        }
+        .buttonStyle(TranslationToolbarButtonStyle(isSelected: model.isPinned))
+        .help(model.isPinned ? text.unpinPopup : text.pinPopup)
+        .accessibilityLabel(model.isPinned ? text.unpinPopup : text.pinPopup)
+        .accessibilityValue(model.isPinned ? text.pinned : text.notPinned)
+        .accessibilityAddTraits(model.isPinned ? .isSelected : [])
+        .accessibilityIdentifier("translationPin")
+    }
+
     private var closeButton: some View {
         Button { model.close() } label: { Image(systemName: "xmark") }
             .buttonStyle(TranslationToolbarButtonStyle(isClose: true))
@@ -331,6 +344,7 @@ struct TranslationPanelView: View {
 
 private struct TranslationToolbarButtonStyle: ButtonStyle {
     var isClose = false
+    var isSelected = false
     @State private var hovered = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.isEnabled) private var isEnabled
@@ -339,12 +353,14 @@ private struct TranslationToolbarButtonStyle: ButtonStyle {
         configuration.label
             .font(.system(size: 16))
             .foregroundStyle(hovered && isClose ? Color.red :
-                (hovered || configuration.isPressed ? Color.primary : Color.secondary))
+                (isSelected ? Color.accentColor :
+                    (hovered || configuration.isPressed ? Color.primary : Color.secondary)))
             .frame(width: 34, height: 34)
             .background {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(configuration.isPressed ? Color.primary.opacity(0.14) :
-                        (hovered ? (isClose ? Color.red.opacity(0.12) : Color.primary.opacity(0.07)) : .clear))
+                        (isSelected ? Color.accentColor.opacity(0.14) :
+                            (hovered ? (isClose ? Color.red.opacity(0.12) : Color.primary.opacity(0.07)) : .clear)))
             }
             .contentShape(RoundedRectangle(cornerRadius: 8))
             .opacity(isEnabled ? 1 : 0.4)
