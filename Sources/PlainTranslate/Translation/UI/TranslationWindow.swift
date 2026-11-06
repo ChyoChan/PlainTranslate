@@ -55,13 +55,32 @@ enum TranslationDismissalPolicy {
 }
 
 enum TranslationWindowPolicy {
+    // Keep one activating host across modes so editor selection can activate the app without restarting translation.
+    static func makePanel(contentRect: NSRect) -> TranslationPanel {
+        TranslationPanel(contentRect: contentRect,
+            styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
+            backing: .buffered, defer: false)
+    }
+
     static func configure(_ panel: NSPanel, for presentation: TranslationPresentation) {
         let compact = presentation == .compact
         panel.isFloatingPanel = compact
         panel.level = compact ? .floating : .normal
         panel.hidesOnDeactivate = false
-        // Keep the nonactivating style fixed; changing it on a live NSPanel can
-        // leave its WindowServer activation state out of sync with AppKit.
+        panel.collectionBehavior = compact
+            ? [.moveToActiveSpace, .fullScreenAuxiliary, .transient] : [.managed]
+    }
+
+    static func present(_ panel: NSPanel, for presentation: TranslationPresentation) {
+        if presentation == .compact {
+            if panel.isMainWindow { panel.resignMain() }
+            // Show the result without taking keyboard focus from the app that supplied the text.
+            panel.orderFrontRegardless()
+        } else {
+            NSApp.activate(ignoringOtherApps: true)
+            panel.makeKeyAndOrderFront(nil)
+            panel.makeMain()
+        }
     }
 }
 

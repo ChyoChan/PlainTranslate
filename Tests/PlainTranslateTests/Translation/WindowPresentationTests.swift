@@ -7,6 +7,50 @@ import XCTest
 
 final class WindowPresentationTests: XCTestCase {
     @MainActor
+    func testEditorUsesAnActivatingWindowThatParticipatesInMissionControl() {
+        _ = NSApplication.shared
+        let panel = TranslationWindowPolicy.makePanel(contentRect: NSRect(x: 0, y: 0, width: 880, height: 520))
+        panel.isReleasedWhenClosed = false
+        defer { panel.close() }
+        for mode in [TranslationPresentation.editor, .compact, .editor] {
+            TranslationWindowPolicy.configure(panel, for: mode)
+            if mode == .editor {
+                XCTAssertFalse(panel.styleMask.contains(.nonactivatingPanel),
+                               "The full editor must allow its owning app to activate when selected")
+                XCTAssertTrue(panel.collectionBehavior.contains(.managed),
+                              "The editor must participate explicitly in Mission Control and Spaces")
+                XCTAssertFalse(panel.collectionBehavior.contains(.transient))
+                XCTAssertFalse(panel.collectionBehavior.contains(.moveToActiveSpace))
+                XCTAssertFalse(panel.collectionBehavior.contains(.fullScreenAuxiliary))
+                XCTAssertTrue(panel.canBecomeMain)
+                XCTAssertTrue(panel.canBecomeKey)
+            }
+            XCTAssertFalse(panel.isVisible, "The configuration fixture must not present a window")
+        }
+    }
+
+    @MainActor
+    func testShowingCompactResultDoesNotChangeApplicationOrKeyboardFocus() {
+        _ = NSApplication.shared
+        let panel = TranslationWindowPolicy.makePanel(contentRect: NSRect(x: -10_000, y: -10_000, width: 630, height: 300))
+        panel.isReleasedWhenClosed = false
+        panel.alphaValue = 0
+        panel.ignoresMouseEvents = true
+        defer { panel.close() }
+        TranslationWindowPolicy.configure(panel, for: .compact)
+        let activeBefore = NSApp.isActive
+        let keyBefore = NSApp.keyWindow
+        let mainBefore = NSApp.mainWindow
+        TranslationWindowPolicy.present(panel, for: .compact)
+        XCTAssertTrue(panel.isVisible)
+        XCTAssertFalse(panel.isKeyWindow)
+        XCTAssertFalse(panel.isMainWindow)
+        XCTAssertEqual(NSApp.isActive, activeBefore)
+        XCTAssertTrue(NSApp.keyWindow === keyBefore)
+        XCTAssertTrue(NSApp.mainWindow === mainBefore)
+    }
+
+    @MainActor
     func testPinningPreservesInFlightTextAndResetsOnClose() throws {
         let model = TranslationService(presentation: .compact)
         defer { model.close() }
@@ -46,9 +90,7 @@ final class WindowPresentationTests: XCTestCase {
     @MainActor
     func testSwitchingModesKeepsTheHostAndRestoresWindowBehavior() {
         _ = NSApplication.shared
-        let panel = TranslationPanel(contentRect: NSRect(x: 0, y: 0, width: 630, height: 300),
-            styleMask: [.titled, .closable, .resizable, .nonactivatingPanel, .fullSizeContentView],
-            backing: .buffered, defer: false)
+        let panel = TranslationWindowPolicy.makePanel(contentRect: NSRect(x: 0, y: 0, width: 630, height: 300))
         panel.isReleasedWhenClosed = false
         let host = NSView(frame: panel.contentView!.bounds)
         panel.contentView = host
@@ -61,7 +103,9 @@ final class WindowPresentationTests: XCTestCase {
             XCTAssertEqual(panel.canBecomeMain, mode == .editor)
             XCTAssertTrue(panel.canBecomeKey)
             XCTAssertFalse(panel.hidesOnDeactivate)
-            XCTAssertTrue(panel.styleMask.contains(.nonactivatingPanel))
+            XCTAssertEqual(panel.collectionBehavior.contains(.transient), mode == .compact)
+            XCTAssertEqual(panel.collectionBehavior.contains(.managed), mode == .editor)
+            XCTAssertFalse(panel.styleMask.contains(.nonactivatingPanel))
             XCTAssertTrue(panel.contentView === host, "Changing mode must not replace the translation host")
             XCTAssertFalse(panel.isVisible, "This test must never show a real window")
         }

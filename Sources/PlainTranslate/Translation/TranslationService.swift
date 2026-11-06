@@ -223,9 +223,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
             preferredSize.width = TranslationCompactLayout.width(UserDefaults.standard.double(forKey: DefaultsKey.translationPopupWidth))
         }
         if panel == nil {
-            let created = TranslationPanel(contentRect: NSRect(origin: .zero, size: preferredSize),
-                styleMask: [.titled, .closable, .resizable, .nonactivatingPanel, .fullSizeContentView],
-                backing: .buffered, defer: false)
+            let created = TranslationWindowPolicy.makePanel(contentRect: NSRect(origin: .zero, size: preferredSize))
             created.title = "PlainTranslate"
             created.titleVisibility = .hidden
             created.titlebarAppearsTransparent = true
@@ -234,7 +232,6 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
                 created.standardWindowButton(button)?.isHidden = true
             }
             created.isReleasedWhenClosed = false
-            created.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
             created.delegate = self
             created.contentView = NSHostingView(rootView: TranslationPanelView(model: self))
             panel = created
@@ -262,9 +259,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
             let y = min(max(preferredY, frame.minY), max(frame.minY, frame.maxY - panel.frame.height))
             panel.setFrameOrigin(NSPoint(x: x, y: y))
         }
-        if mode == .editor { NSApp.activate(ignoringOtherApps: true) }
-        panel.makeKeyAndOrderFront(nil)
-        if mode == .editor { panel.makeMain() }
+        TranslationWindowPolicy.present(panel, for: mode)
         updateDismissMonitors()
     }
 
