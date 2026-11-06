@@ -76,12 +76,13 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     private var firstCopy: CopyObservation?
     private var strings: TranslationStrings { TranslationStrings(language: L10n.shared.language) }
 
-    init(presentation: TranslationPresentation = .editor,
+    init(presentation: TranslationPresentation = .editor, panel: NSPanel? = nil,
          googleTranslation: @escaping (TranslationRequest) async throws -> String = TranslationService.translateWithGoogle,
          autoTranslationDelay: @escaping () async throws -> Void = {
              try await Task.sleep(nanoseconds: 600_000_000)
          }) {
         self.presentation = presentation
+        self.panel = panel
         self.googleTranslation = googleTranslation
         self.autoTranslationDelay = autoTranslationDelay
         super.init()
@@ -193,7 +194,12 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         let modifiers = event.modifierFlags.intersection([.command, .control, .option, .shift])
         let isCopy = modifiers == .command && event.keyCode == UInt16(kVK_ANSI_C)
         let pid = NSWorkspace.shared.frontmostApplication?.processIdentifier ?? 0
-        if detector.observe(isCopy: isCopy, isRepeat: event.isARepeat, time: event.timestamp, pid: pid) {
+        observeCopy(isCopy: isCopy, isRepeat: event.isARepeat, time: event.timestamp, pid: pid)
+    }
+
+    func observeCopy(isCopy: Bool, isRepeat: Bool, time: TimeInterval, pid: pid_t) {
+        guard !readInFlight else { detector = .init(); firstCopy = nil; return }
+        if detector.observe(isCopy: isCopy, isRepeat: isRepeat, time: time, pid: pid) {
             // Give the second native Copy time to publish its pasteboard item.
             // Capture the source PID now; don't read another app's copy later.
             let token = generation.advance()
@@ -205,7 +211,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
                 self.useCopiedText(requiringChangeAfter: observation?.changeCount, requiresFreshCopy: true,
                                    presentation: .compact, requiringSourcePID: pid)
             }
-        } else if isCopy, !event.isARepeat {
+        } else if isCopy, !isRepeat {
             let observation = CopyObservation()
             firstCopy = observation
             GeneralPasteboardAccess.shared.async(timeout: 0.6, { NSPasteboard.general.changeCount },
