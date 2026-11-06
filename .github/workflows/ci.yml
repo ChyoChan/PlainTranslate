@@ -8,14 +8,14 @@ jobs:
   macos:
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Unit tests (no credentials or live translation requests)
         run: ./build.sh --test
       - name: Build standalone app
         run: ./build.sh
       - name: Archive app with executable permissions
         run: ditto -c -k --sequesterRsrc --keepParent build/PlainTranslate.app build/PlainTranslate-macOS.zip
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: PlainTranslate-macOS
           path: build/PlainTranslate-macOS.zip
