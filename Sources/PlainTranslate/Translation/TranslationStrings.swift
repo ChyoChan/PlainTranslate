@@ -108,8 +108,8 @@ struct TranslationStrings {
         language.text("Google usage reached 90% (local estimate)", "Google 用量已達 90%（本機估算）", "Google 用量已达 90%（本地估算）", "Google 使用量が 90% に達しました（ローカル推定）")
     }
     var googleUsageReminderCaption: String {
-        let threshold = GoogleTranslationUsageReminder.thresholdCharacters.formatted(.number)
-        let allowance = GoogleTranslationUsageReminder.freeTierCharacters.formatted(.number)
+        let threshold = GoogleTranslationUsageReminder.thresholdCharacters.formatted(.number.locale(Locale(identifier: language.rawValue)))
+        let allowance = GoogleTranslationUsageReminder.freeTierCharacters.formatted(.number.locale(Locale(identifier: language.rawValue)))
         return language.text("Remind once per month at \(threshold) characters (90% of the \(allowance)-character reference allowance). Translation continues. Other apps may share the free credit.", "每月達 \(threshold) 字元時提醒一次（參考免費額度 \(allowance) 字元的 90%），不會停止翻譯。其他 App 可能共用免費抵免。", "每月达到 \(threshold) 字符时提醒一次（参考免费额度 \(allowance) 字符的 90%），不会停止翻译。其他 App 可能共用免费抵免。", "毎月 \(threshold) 文字（参考枠 \(allowance) 文字の 90%）で 1 回通知します。翻訳は継続します。無料クレジットはほかのアプリと共有される場合があります。")
     }
     var hongKongTime: String { language.text("Hong Kong time", "香港時間", "香港时间", "香港時間") }
