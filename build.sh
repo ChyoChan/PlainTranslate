@@ -19,7 +19,10 @@ MACOS_SDK_VERSION="$(xcrun --sdk macosx --show-sdk-version)"
 APP_MINIMUM_MACOS="$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' Resources/Info.plist)"
 # SwiftPM can stamp the deployment target as the SDK, enabling legacy controls.
 SDK_FLAGS=(--sdk "$MACOS_SDK_PATH" -Xlinker -platform_version -Xlinker macos -Xlinker "$APP_MINIMUM_MACOS" -Xlinker "$MACOS_SDK_VERSION")
-if $TEST; then exec swift test "${SDK_FLAGS[@]}"; fi
+if $TEST; then
+  ./Tests/InstallAppTests.sh
+  exec swift test "${SDK_FLAGS[@]}"
+fi
 
 SIGNING_CONFIG="$ROOT/.local-signing-identity"
 if [[ -n "${PLAINTRANSLATE_SIGNING_IDENTITY:-}" ]]; then
@@ -61,21 +64,5 @@ mv "$APP" "$ROOT/build/PlainTranslate.app"
 print "Built: $ROOT/build/PlainTranslate.app"
 
 if $INSTALL; then
-  DESTINATION='/Applications/PlainTranslate.app'
-  if [[ -L "$DESTINATION" ]]; then
-    print -u2 'Refusing to replace a symbolic link in /Applications.'; exit 1
-  fi
-  if [[ -e "$DESTINATION" ]]; then
-    EXISTING_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$DESTINATION/Contents/Info.plist" 2>/dev/null || true)"
-    [[ "$EXISTING_ID" == 'com.chyo.plaintranslate' ]] || {
-      print -u2 'Refusing to replace an application with a different identity.'; exit 1
-    }
-    if pgrep -f '^/Applications/PlainTranslate.app/Contents/MacOS/PlainTranslate($| )' >/dev/null; then
-      print -u2 'Quit PlainTranslate before installing this update.'; exit 1
-    fi
-    rm -rf -- "$DESTINATION"
-  fi
-  ditto "$ROOT/build/PlainTranslate.app" "$DESTINATION"
-  codesign --verify --deep --strict "$DESTINATION"
-  print "Installed: $DESTINATION"
+  "$ROOT/Tools/InstallApp.sh" "$ROOT/build/PlainTranslate.app" '/Applications/PlainTranslate.app'
 fi
