@@ -153,6 +153,68 @@ final class LanguageSelectionTests: XCTestCase {
     }
 
     @MainActor
+    func testSelectedLanguageScrollsIntoViewInNarrowWindowsAndOnReopen() throws {
+        _ = NSApplication.shared
+        try prepareBrandMarkForUITests()
+        let defaults = UserDefaults.standard
+        let previous = defaults.volatileDomain(forName: UserDefaults.argumentDomain)
+        let previousLanguage = L10n.shared.language
+        var preferences = previous
+        for key in [DefaultsKey.translationRecentSourceLanguages, DefaultsKey.translationSourceTabs] {
+            preferences[key] = ["en", "auto", "zh-Hant", "zh-Hans"]
+        }
+        for key in [DefaultsKey.translationRecentTargetLanguages, DefaultsKey.translationTargetTabs] {
+            preferences[key] = ["zh-Hant", "en", "ja", "zh-Hans"]
+        }
+        defaults.setVolatileDomain(preferences, forName: UserDefaults.argumentDomain)
+        L10n.shared.setLanguage(.en)
+        defer {
+            L10n.shared.setLanguage(previousLanguage)
+            defaults.setVolatileDomain(previous, forName: UserDefaults.argumentDomain)
+        }
+        for (mode, source) in [(TranslationPresentation.editor, false), (.editor, true), (.compact, false)] {
+            let model = TranslationService(presentation: mode)
+            model.source = "en"
+            model.target = "zh-Hant"
+            defer { model.close() }
+            let size = mode == .editor ? NSSize(width: 620, height: 380) : NSSize(width: 400, height: 390)
+            func mount() -> (NSView, NSWindow) {
+                fixture(TranslationPanelView(model: model).environment(\.colorScheme, .dark).accentColor(.blue), size: size)
+            }
+            func selectedUnderline(_ host: NSView) throws {
+                settle(0.35)
+                host.layoutSubtreeIfNeeded()
+                let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+                host.cacheDisplay(in: host.bounds, to: bitmap)
+                let scale = CGFloat(bitmap.pixelsWide) / host.bounds.width
+                let row = Int((mode == .editor ? 104 : 93) * scale)
+                let columns = mode == .compact ? 0..<bitmap.pixelsWide :
+                    (source ? 0..<(bitmap.pixelsWide / 2) : (bitmap.pixelsWide / 2)..<bitmap.pixelsWide)
+                _ = try blueCenter(bitmap, row: row, columns: columns)
+                let bluePixels = columns.filter { x in
+                    guard let color = bitmap.colorAt(x: x, y: row)?.usingColorSpace(.deviceRGB) else { return false }
+                    return color.blueComponent > 0.6 && color.blueComponent > color.redComponent * 1.5 &&
+                        color.blueComponent > color.greenComponent * 1.1
+                }
+                XCTAssertGreaterThan(CGFloat(bluePixels.count) / scale, 80,
+                                     "The selected Simplified Chinese tab must be fully visible, not clipped at the edge")
+            }
+            let (host, window) = mount()
+            settle(0.1)
+            if source { model.setSource("zh-Hans") } else { model.setTarget("zh-Hans") }
+            try selectedUnderline(host)
+            window.close()
+            let (reopenedHost, reopenedWindow) = mount()
+            defer { reopenedWindow.close() }
+            try selectedUnderline(reopenedHost)
+            if source { model.setSource("en") } else { model.setTarget("zh-Hant") }
+            settle(0.35)
+            if source { model.setSource("zh-Hans") } else { model.setTarget("zh-Hans") }
+            try selectedUnderline(reopenedHost)
+        }
+    }
+
+    @MainActor
     private func fixture<Content: View>(_ content: Content, size: NSSize) -> (NSView, NSWindow) {
         let host = NSHostingView(rootView: content)
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),
