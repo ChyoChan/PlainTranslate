@@ -85,14 +85,14 @@
 
 ## 安装
 
-从[发布页面](https://github.com/ChyoChan/PlainTranslate/releases)下载 App 压缩包及配套的 **SHA256SUMS**。公开预览版目前提供 ZIP；本地制作的 DMG 尚未发布到该页面。
+从[发布页面](https://github.com/ChyoChan/PlainTranslate/releases)下载 ZIP 或 DMG，以及 **SHA256SUMS**。两种安装包包含相同的 App。
 
 1. 退出所有正在运行的 PlainTranslate。
 2. 解压 ZIP，将 **PlainTranslate.app** 移到「应用程序」。如使用 DMG，打开后将 App 拖到 Applications 快捷方式，再推出磁盘映像。
 3. 从「应用程序」或程序坞打开 PlainTranslate。
 4. 选择引擎，按[设置步骤](#开始使用)操作。
 
-校验下载文件时，将压缩包与配套的 `SHA256SUMS` 放在同一文件夹，执行：
+如需校验两个安装包，将 ZIP、DMG 和 `SHA256SUMS` 放在同一文件夹，执行：
 
 ```sh
 shasum -a 256 -c SHA256SUMS

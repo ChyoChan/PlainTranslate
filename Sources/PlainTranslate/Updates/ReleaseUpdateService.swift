@@ -110,7 +110,7 @@ struct GitHubReleaseClient {
 @MainActor
 final class ReleaseUpdateService: ObservableObject {
     static let shared = ReleaseUpdateService(
-        currentVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.4",
+        currentVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.5",
         client: GitHubReleaseClient(repository: "ChyoChan/PlainTranslate"))
     let currentVersion: String
     let client: GitHubReleaseClient

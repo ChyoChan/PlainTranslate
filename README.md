@@ -85,14 +85,14 @@ Both selected-text shortcuts are off by default and require Accessibility permis
 
 ## Install
 
-Download an app archive and its **SHA256SUMS** from the [releases page](https://github.com/ChyoChan/PlainTranslate/releases). Public previews currently provide ZIP files; the locally prepared DMG has not yet been published there.
+Download the ZIP or DMG and **SHA256SUMS** from the [releases page](https://github.com/ChyoChan/PlainTranslate/releases). Both packages contain the same app.
 
 1. Quit any running copy of PlainTranslate.
 2. Extract the ZIP and move **PlainTranslate.app** into **Applications**. If you have a DMG, open it and drag the app onto its Applications shortcut, then eject the disk image.
 3. Open PlainTranslate from Applications or the Dock.
 4. Choose an engine and follow the [setup steps](#get-started).
 
-To verify a download, put the archive and its matching `SHA256SUMS` in the same folder and run:
+To verify both packages, put the ZIP, DMG and `SHA256SUMS` in the same folder and run:
 
 ```sh
 shasum -a 256 -c SHA256SUMS
