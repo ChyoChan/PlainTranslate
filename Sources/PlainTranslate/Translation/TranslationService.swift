@@ -598,8 +598,13 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         copyToken = UUID()
         let prepared = TranslationLineBreakCleanup.prepare(input, enabled:
             UserDefaults.standard.bool(forKey: DefaultsKey.translationPDFLineBreakCleanup))
-        let pending = TranslationRequest(text: prepared, source: source == "auto" ? nil : source,
-                                         target: target, engine: engine)
+        var resolvedSource: String? = source == "auto" ? nil : source
+        if source == "auto", engine == .apple {
+            let detected = TranslationLanguageDetection.source(for: prepared)
+            // Leave same-language inference to Apple; an ambiguous word must not be silently skipped.
+            if detected != target { resolvedSource = detected }
+        }
+        let pending = TranslationRequest(text: prepared, source: resolvedSource, target: target, engine: engine)
         if let cached = resultCache.value(for: pending) {
             request = nil
             output = cached
