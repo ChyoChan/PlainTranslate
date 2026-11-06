@@ -30,11 +30,9 @@ struct GitHubReleaseClient {
             config.urlCredentialStorage = nil
             config.timeoutIntervalForRequest = 15
             config.timeoutIntervalForResource = 20
-            let session = URLSession(configuration: config, delegate: NoRedirects(), delegateQueue: nil)
-            defer { session.finishTasksAndInvalidate() }
-            let (data, response) = try await session.data(for: request)
-            guard let response = response as? HTTPURLResponse else { throw ReleaseCheckError.invalidResponse }
-            return (data, response)
+            return try await BoundedHTTPTransport.data(for: request, configuration: config,
+                                                       maximumBytes: 3_000_000,
+                                                       invalidResponse: ReleaseCheckError.invalidResponse)
         }
     }
 
@@ -106,11 +104,6 @@ struct GitHubReleaseClient {
         enum CodingKeys: String, CodingKey {
             case tag = "tag_name", url = "html_url", body, draft, preview = "prerelease"
         }
-    }
-    private final class NoRedirects: NSObject, URLSessionTaskDelegate {
-        func urlSession(_ session: URLSession, task: URLSessionTask,
-                        willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest,
-                        completionHandler: @escaping (URLRequest?) -> Void) { completionHandler(nil) }
     }
 }
 

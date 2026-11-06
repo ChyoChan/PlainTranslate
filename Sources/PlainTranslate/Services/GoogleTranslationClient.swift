@@ -24,7 +24,6 @@ final class GoogleTranslationClient {
     typealias Transport = (URLRequest) async throws -> (Data, HTTPURLResponse)
     static let endpoint = URL(string: "https://translation.googleapis.com/language/translate/v2")!
     private let transport: Transport
-    private let session: URLSession?
     private let recordUsage: (Int) -> Void
 
     init(recordUsage: @escaping (Int) -> Void = { GoogleTranslationUsageStore.shared.record(characterCount: $0) },
@@ -32,7 +31,6 @@ final class GoogleTranslationClient {
         self.recordUsage = recordUsage
         if let transport {
             self.transport = transport
-            self.session = nil
         } else {
             let configuration = URLSessionConfiguration.ephemeral
             configuration.urlCache = nil
@@ -41,19 +39,13 @@ final class GoogleTranslationClient {
             configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
             configuration.timeoutIntervalForRequest = 30
             configuration.timeoutIntervalForResource = 60
-            let session = URLSession(configuration: configuration, delegate: NoRedirects(), delegateQueue: nil)
-            self.session = session
             self.transport = { request in
-                let (data, response) = try await session.data(for: request)
-                guard let response = response as? HTTPURLResponse else {
-                    throw GoogleTranslationError.invalidResponse
-                }
-                return (data, response)
+                try await BoundedHTTPTransport.data(for: request, configuration: configuration,
+                                                    maximumBytes: 2_000_000,
+                                                    invalidResponse: GoogleTranslationError.invalidResponse)
             }
         }
     }
-
-    deinit { session?.invalidateAndCancel() }
 
     static func languageCode(_ identifier: String) -> String {
         switch identifier {
@@ -174,13 +166,5 @@ final class GoogleTranslationClient {
         let data: Payload
         struct Payload: Decodable { let translations: [Item] }
         struct Item: Decodable { let translatedText: String }
-    }
-
-    private final class NoRedirects: NSObject, URLSessionTaskDelegate {
-        func urlSession(_ session: URLSession, task: URLSessionTask,
-                        willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest,
-                        completionHandler: @escaping (URLRequest?) -> Void) {
-            completionHandler(nil)
-        }
     }
 }
