@@ -3,6 +3,7 @@
 
 import AppKit
 import SwiftUI
+import Translation
 import Vision
 import XCTest
 @testable import PlainTranslate
@@ -30,7 +31,8 @@ final class InterfaceTests: XCTestCase {
         if let directory {
             try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
         }
-        for (language, scheme) in [(AppLanguage.en, ColorScheme.light), (.en, .dark), (.zhHK, .light), (.zhHK, .dark), (.zhHans, .light), (.zhHans, .dark), (.ja, .light), (.ja, .dark)] {
+        for (language, scheme) in [(AppLanguage.en, ColorScheme.light), (.en, .dark), (.zhHK, .light), (.zhHK, .dark),
+                                   (.zhHans, .light), (.zhHans, .dark), (.ja, .light), (.ja, .dark)] {
             L10n.shared.setLanguage(language)
             for (name, mode, size) in [
                 ("compact", TranslationPresentation.compact, NSSize(width: 630, height: 520)),
@@ -69,10 +71,43 @@ final class InterfaceTests: XCTestCase {
             compactModel.clearTranslationCache()
             compactModel.translate()
             let failedRequest = try XCTUnwrap(compactModel.request)
-            compactModel.finish(failedRequest.id, result: .failure(TranslationUnsupportedPair()))
+            compactModel.finish(failedRequest.id, result: .failure(TranslationError.unsupportedLanguagePairing))
             try render(TranslationPanelView(model: compactModel).environment(\.colorScheme, scheme),
                        size: NSSize(width: 400, height: 520), name: "compact-error-\(language.rawValue)-\(scheme)", directory: directory)
             compactModel.close()
+            do {
+                let previousDomain = UserDefaults.standard.volatileDomain(forName: UserDefaults.argumentDomain)
+                var fixture = previousDomain
+                fixture[DefaultsKey.translationEngine] = TranslationEngine.google.rawValue
+                UserDefaults.standard.setVolatileDomain(fixture, forName: UserDefaults.argumentDomain)
+                defer { UserDefaults.standard.setVolatileDomain(previousDomain, forName: UserDefaults.argumentDomain) }
+                for (errorName, failure) in [("retry", GoogleTranslationError.network), ("key-setup", .invalidKey)] {
+                    let recoveryModel = TranslationService(presentation: .compact, googleTranslation: { _ in throw GoogleTranslationError.network })
+                    recoveryModel.source = "en"
+                    recoveryModel.target = "zh-Hant"
+                    recoveryModel.input = original
+                    recoveryModel.translate()
+                    recoveryModel.finish(try XCTUnwrap(recoveryModel.request).id, result: .failure(failure))
+                    recoveryModel.togglePin()
+                    for (name, mode, size) in [
+                        ("compact", TranslationPresentation.compact, NSSize(width: 400, height: 540)),
+                        ("editor", TranslationPresentation.editor, NSSize(width: 620, height: 380)),
+                    ] {
+                        let model = mode == .compact ? recoveryModel : TranslationService(presentation: mode, googleTranslation: { _ in throw GoogleTranslationError.network })
+                        if mode == .editor {
+                            model.source = "en"
+                            model.target = "zh-Hant"
+                            model.input = original
+                            model.translate()
+                            model.finish(try XCTUnwrap(model.request).id, result: .failure(failure))
+                        }
+                        try render(TranslationPanelView(model: model).environment(\.colorScheme, scheme),
+                                   size: size, name: "\(name)-\(errorName)-\(language.rawValue)-\(scheme)", directory: directory)
+                        if mode == .editor { model.close() }
+                    }
+                    recoveryModel.close()
+                }
+            }
             try render(Form { ReleaseUpdateSection(model: ReleaseUpdateService(currentVersion: "0.1.3", client: GitHubReleaseClient(repository: "ChyoChan/PlainTranslate"))) }.formStyle(.grouped).environment(\.colorScheme, scheme),
                        size: NSSize(width: 680, height: 420), name: "published-updates-\(language.rawValue)-\(scheme)", directory: directory)
             let domain = "com.chyo.plaintranslate.tests.settings-render.\(UUID().uuidString)"

@@ -277,6 +277,14 @@ struct TranslationPanelView: View {
                                     Text(message)
                                         .font(.system(size: compact ? TranslationCompactLayout.fontSize(popupFontSize) : 18))
                                         .textSelection(.enabled)
+                                    if model.canRetry {
+                                        Button { model.retryTranslation() } label: {
+                                            Label(text.retry, systemImage: "arrow.clockwise")
+                                        }
+                                        .buttonStyle(.borderedProminent)
+                                        .controlSize(.large)
+                                        .accessibilityIdentifier("translationRetry")
+                                    }
                                     if model.offersGoogleKeySetup {
                                         Button { SettingsNavigation.shared.requestGoogleCredentials() } label: {
                                             Label(text.configureGoogleKey, systemImage: "key")

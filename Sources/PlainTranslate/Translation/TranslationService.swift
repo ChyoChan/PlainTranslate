@@ -7,6 +7,7 @@ import AVFoundation
 import Carbon.HIToolbox
 import Combine
 import SwiftUI
+import Translation
 
 /// On-demand translation. Apple stays local; Google is an explicit cloud opt-in.
 /// Text and credentials are never logged or written to translation history.
@@ -20,6 +21,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     @Published private(set) var output = ""
     @Published private(set) var message: String?
     @Published private(set) var googleFailure: GoogleTranslationError?
+    @Published private(set) var canRetry = false
     @Published private(set) var isPinned = false
     @Published private(set) var busy = false
     @Published private(set) var copied = false
@@ -317,6 +319,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         output = ""
         message = nil
         googleFailure = nil
+        canRetry = false
         copied = false
         copiedOriginal = false
         copyToken = UUID()
@@ -448,6 +451,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
               sourcePID == nil || NSWorkspace.shared.frontmostApplication?.processIdentifier == sourcePID else { return }
         cancelAutoTranslation()
         googleFailure = nil
+        canRetry = false
         stopSpeech()
         cloudTask?.cancel()
         cloudTask = nil
@@ -486,6 +490,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     func inputDidChange() {
         cancelAutoTranslation()
         googleFailure = nil
+        canRetry = false
         stopSpeech()
         cloudTask?.cancel()
         cloudTask = nil
@@ -578,6 +583,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         cancelAutoTranslation()
         stopSpeech()
         googleFailure = nil
+        canRetry = false
         do { _ = try TranslationTextPlan.validate(input) }
         catch { message = inputMessage(error); return }
         rememberLanguages()
@@ -616,6 +622,11 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         }
     }
 
+    func retryTranslation() {
+        guard canRetry, !busy else { return }
+        translate()
+    }
+
     static func translateWithGoogle(_ pending: TranslationRequest) async throws -> String {
         let key = try await Task.detached { try TranslationKeychain().load() }.value
         try Task.checkCancellation()
@@ -639,6 +650,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         cancelAutoTranslation()
         stopSpeech()
         googleFailure = nil
+        canRetry = false
         cloudTask?.cancel()
         cloudTask = nil
         generation.advance()
@@ -650,6 +662,7 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
     func finish(_ id: UUID, result: Result<String, Error>) {
         guard let pending = request, pending.id == id else { return }
         googleFailure = nil
+        canRetry = false
         cloudTask = nil
         busy = false
         switch result {
@@ -661,16 +674,48 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
                 cachedTranslationCount = resultCache.count
             }
         case .failure(let error):
-            if error is CancellationError { message = nil }
-            else if error is TranslationUnsupportedPair { message = strings.unsupported }
-            else if error is TranslationUnknownSource { message = strings.unknownSource }
-            else if let error = error as? GoogleTranslationError {
+            switch error {
+            case is CancellationError:
+                message = nil
+            case let error as URLError where error.code == .cancelled:
+                message = nil
+            case TranslationError.unsupportedSourceLanguage, TranslationError.unsupportedTargetLanguage,
+                 TranslationError.unsupportedLanguagePairing:
+                message = strings.unsupported
+            case TranslationError.unableToIdentifyLanguage:
+                message = strings.unknownSource
+            case TranslationError.nothingToTranslate:
+                message = strings.empty
+            case let error as GoogleTranslationError:
                 googleFailure = error
                 message = strings.googleError(error)
+                canRetry = [.network, .quota, .unavailable, .invalidResponse].contains(error)
+            case is TranslationKeychain.Failure:
+                message = strings.keychainFailed
+                canRetry = true
+            case is TranslationInputError:
+                message = inputMessage(error)
+            case is URLError:
+                message = strings.networkFailed
+                canRetry = true
+            default:
+                message = strings.failed
+                canRetry = true
+                // Xcode 16 builds remain supported; these errors arrived in the macOS 26 SDK.
+                #if compiler(>=6.2)
+                if #available(macOS 26.0, *), TranslationError.alreadyCancelled ~= error {
+                    message = nil
+                    canRetry = false
+                } else if #available(macOS 26.0, *), TranslationError.notInstalled ~= error {
+                    message = strings.languagesNotInstalled
+                }
+                #endif
             }
-            else if error is TranslationKeychain.Failure { message = strings.keychainFailed }
-            else if error is TranslationInputError { message = inputMessage(error) }
-            else { message = strings.failed }
+            if let message, Bundle.main.bundleIdentifier != nil {
+                NSAccessibility.post(element: NSApplication.shared, notification: .announcementRequested,
+                                     userInfo: [.announcement: message,
+                                                .priority: NSAccessibilityPriorityLevel.medium.rawValue])
+            }
         }
         request = nil
     }
@@ -804,6 +849,3 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
         }
     }
 }
-
-struct TranslationUnsupportedPair: Error {}
-struct TranslationUnknownSource: Error {}

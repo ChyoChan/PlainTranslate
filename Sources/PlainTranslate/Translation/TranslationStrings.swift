@@ -80,10 +80,17 @@ struct TranslationStrings {
     var speechVoiceMissing: String {
         language.text("No installed voice matches this language. Download a voice in System Settings → Accessibility → Read & Speak, then try again.", "找不到此語言的已安裝語音。請到「系統設定 → 輔助使用 → 閱讀與朗讀」下載相應語音，再試朗讀。", "找不到此语言的已安装语音。请到“系统设置 → 辅助功能 → 朗读与语音”下载相应语音，再试朗读。", "この言語に対応する音声がありません。「システム設定 → アクセシビリティ → リーダーと読み上げ」で音声をダウンロードしてからお試しください。")
     }
+    var retry: String { language.text("Retry", "重試", "重试", "再試行") }
     var pinPopup: String { language.text("Pin window — keep open when clicking outside", "固定視窗：點擊外部時保持開啟", "固定窗口：点击外部时保持打开", "ウインドウを固定：外側をクリックしても開いたままにする") }
     var unpinPopup: String { language.text("Unpin window — close when clicking outside", "取消固定：點擊外部時關閉", "取消固定：点击外部时关闭", "固定を解除：外側をクリックすると閉じる") }
     var pinned: String { language.text("Pinned", "已固定", "已固定", "固定済み") }
     var notPinned: String { language.text("Not pinned", "未固定", "未固定", "未固定") }
+    var languagesNotInstalled: String {
+        language.text("The Apple language downloads are not ready. Connect to the internet, then retry and allow the language download.", "Apple 語言包尚未準備好。請連接網絡後重試，並允許下載語言包。", "Apple 语言包尚未就绪。请联网后重试，并允许下载语言包。", "Apple の言語パックが準備できていません。インターネットに接続して再試行し、ダウンロードを許可してください。")
+    }
+    var networkFailed: String {
+        language.text("Could not connect. Check your internet connection, then retry. Apple language downloads also need a connection.", "無法連線，請檢查網絡後重試。下載 Apple 語言包也需要網絡連線。", "无法连接，请检查网络后重试。下载 Apple 语言包也需要联网。", "接続できませんでした。インターネット接続を確認して再試行してください。Apple の言語パックのダウンロードにも接続が必要です。")
+    }
     var cancel: String { language.text("Cancel", "取消", "取消", "キャンセル") }
     var close: String { language.text("Close", "關閉", "关闭", "閉じる") }
     var closeHelp: String { language.text("Close (Esc when this window has keyboard focus)", "關閉（此視窗取得鍵盤焦點時可按 Esc）", "关闭（此窗口获得键盘焦点时可按 Esc）", "閉じる（このウインドウにキーボードフォーカスがある場合は Esc）") }

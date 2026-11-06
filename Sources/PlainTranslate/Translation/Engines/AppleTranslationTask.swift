@@ -20,7 +20,7 @@ struct AppleTranslationTask: View {
                         let status = await LanguageAvailability().status(
                             from: Locale.Language(identifier: source),
                             to: Locale.Language(identifier: request.target))
-                        guard status != .unsupported else { throw TranslationUnsupportedPair() }
+                        guard status != .unsupported else { throw TranslationError.unsupportedLanguagePairing }
                     }
                     try Task.checkCancellation()
                     // translate() owns detection and any download consent UI.
@@ -33,17 +33,7 @@ struct AppleTranslationTask: View {
                     try Task.checkCancellation()
                     await MainActor.run { completion(request.id, .success(translated)) }
                 } catch {
-                    let failure: Error
-                    switch error {
-                    case TranslationError.unsupportedSourceLanguage,
-                         TranslationError.unsupportedTargetLanguage,
-                         TranslationError.unsupportedLanguagePairing:
-                        failure = TranslationUnsupportedPair()
-                    case TranslationError.unableToIdentifyLanguage:
-                        failure = TranslationUnknownSource()
-                    default: failure = error
-                    }
-                    await MainActor.run { completion(request.id, .failure(failure)) }
+                    await MainActor.run { completion(request.id, .failure(error)) }
                 }
             }
     }
