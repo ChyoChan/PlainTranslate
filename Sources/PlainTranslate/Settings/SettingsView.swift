@@ -146,20 +146,9 @@ struct SettingsView: View {
                 }
             }
         }
-        if doubleCopy || customShortcutEnabled {
-            Section {
-                HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    Label(permissions.accessibility ? l10n.language.text("Accessibility access granted", "已授予輔助使用權限", "已授予辅助功能权限", "アクセシビリティは許可済みです") : text.permission,
-                          systemImage: permissions.accessibility ? "checkmark.circle" : "lock.shield")
-                        .fixedSize(horizontal: false, vertical: true)
-                    Spacer(minLength: 8)
-                    if !permissions.accessibility {
-                        Button(l10n.language.text("Open Accessibility Settings…", "開啟輔助使用設定…", "打开辅助功能设置…", "アクセシビリティ設定を開く…")) { permissions.requestAccessibility() }
-                    }
-                }
-            } footer: {
-                caption(l10n.language.text("Select text in another app, then use the shortcut. Typing and pasting work without permission.", "在其他 App 選取文字後按快捷鍵翻譯；未授權仍可輸入或貼上。", "在其他 App 选中文字后按快捷键翻译；未授权仍可输入或粘贴。", "ほかのアプリでテキストを選び、ショートカットを使ってください。入力や貼り付けには権限は不要です。"))
-            }
+        Section {
+            AccessibilityPermissionView(granted: permissions.accessibility, language: l10n.language,
+                                        openSettings: permissions.requestAccessibility)
         }
     }
 

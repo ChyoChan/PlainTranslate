@@ -160,7 +160,6 @@ struct TranslationStrings {
     var unsupported: String { language.text("Apple does not support this language pair on this Mac. Choose another language.", "這部 Mac 的 Apple 翻譯不支援此語言組合，請選擇其他語言。", "这台 Mac 的 Apple 翻译不支持此语言组合，请选择其他语言。", "この Mac の Apple 翻訳は、この言語の組み合わせに対応していません。別の言語を選んでください。") }
     var unknownSource: String { language.text("Choose the source language and try again. Very short text can be ambiguous.", "請選擇原文語言後重試；太短的文字可能無法自動辨識。", "请选择原文语言后重试；太短的文字可能无法自动识别。", "原文の言語を選んで再試行してください。短すぎるテキストは自動検出できない場合があります。") }
     var failed: String { language.text("Translation failed. Check the selected languages and try again. Language downloads may need a network connection.", "翻譯未完成，請檢查所選語言後重試。下載語言包可能需要網絡連線。", "翻译未完成，请检查所选语言后重试。下载语言包可能需要联网。", "翻訳を完了できませんでした。選択した言語を確認して再試行してください。言語パックのダウンロードにはインターネット接続が必要な場合があります。") }
-    var permission: String { language.text("Accessibility access required", "需授予輔助使用權限", "需要授予辅助功能权限", "アクセシビリティの許可が必要です") }
     var from: String { language.text("Source language", "原文語言", "原文语言", "原文の言語") }
     var to: String { language.text("Target language", "目標語言", "目标语言", "訳文の言語") }
 }

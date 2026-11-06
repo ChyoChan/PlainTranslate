@@ -110,6 +110,18 @@ final class InterfaceTests: XCTestCase {
             }
             try render(Form { ReleaseUpdateSection(model: ReleaseUpdateService(currentVersion: "0.1.3", client: GitHubReleaseClient(repository: "ChyoChan/PlainTranslate"))) }.formStyle(.grouped).environment(\.colorScheme, scheme),
                        size: NSSize(width: 680, height: 420), name: "published-updates-\(language.rawValue)-\(scheme)", directory: directory)
+            for granted in [false, true] {
+                var settingsOpened = false
+                try render(Form {
+                    Section {
+                        AccessibilityPermissionView(granted: granted, language: language,
+                                                    openSettings: { settingsOpened = true })
+                    }
+                }.formStyle(.grouped).environment(\.colorScheme, scheme),
+                    size: NSSize(width: 620, height: 230),
+                    name: "accessibility-\(granted ? "granted" : "not-granted")-\(language.rawValue)-\(scheme)", directory: directory)
+                XCTAssertFalse(settingsOpened, "Rendering status must not open settings or request access")
+            }
             let domain = "com.chyo.plaintranslate.tests.settings-render.\(UUID().uuidString)"
             let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
             defer { defaults.removePersistentDomain(forName: domain) }
