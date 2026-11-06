@@ -112,7 +112,7 @@ PlainTranslate has no account system, advertising, analytics or translation hist
 
 - **Apple stays on-device.** Language-pack downloads use Apple's system interface. Models and services are supplied by Apple, rather than included in this repository.
 - **Google is your choice.** With Google selected, typing, pasting or invoking translation sends the prepared text directly to Google. Switching to Google in the translation window also translates the existing text. The key stays in your local macOS Keychain.
-- **Clipboard access follows your action.** Selected-text shortcuts read freshly copied text and reject recognized private clipboard markers. Changes during a clipboard read are rejected. Not every app marks sensitive text, so review your selection before using Google.
+- **Clipboard access follows your action.** Shortcuts and Translate copied text reject recognized private clipboard markers and changes during the read. Pasting directly into the editor does not preserve these markers; with Google selected, pasted text is automatically submitted for translation. Review sensitive text before using Google.
 - **The cache stays in memory.** Up to 20 successful results within a 500 KB UTF-8 budget. Clear it in Settings → Usage & Cache. Quitting, locking the session, or saving/removing the Google key also clears it; closing the popup alone does not.
 - **Version checks are manual.** Checking for updates contacts GitHub without translation text or API keys. Setup links open official Google pages in your browser.
 

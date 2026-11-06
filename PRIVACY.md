@@ -46,12 +46,16 @@ granting Accessibility access. Enabling global double-copy requires macOS
 Accessibility permission; the app observes key events to recognize two copies
 in a short interval and does not consume or rewrite the copy shortcut.
 
-The app reads the clipboard when you explicitly paste or invoke translation
-through the shortcut. It does not create a clipboard history. Recognized
-protected clipboard types are refused; not every application marks sensitive
-content, so check your selected text before choosing a cloud engine. Copying a
-translation places the result on the system clipboard, which other clipboard
-utilities may read.
+Shortcuts and the Translate copied text menu action read the clipboard only
+when invoked. These reads reject recognized private clipboard markers and
+content that changes during the read. The app does not create a clipboard history.
+
+Pasting directly into the editor uses native text editing and does not preserve
+clipboard privacy markers. With Google selected, typed or pasted text is
+submitted after a 0.6-second pause. Not every application marks sensitive
+content, so review your text before pasting or invoking cloud translation.
+Copying an original or translation places that text on the system clipboard,
+which other clipboard utilities may read.
 
 ## Local settings and usage estimates
 
