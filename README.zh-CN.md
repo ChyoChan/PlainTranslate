@@ -189,6 +189,15 @@ open /Applications/PlainTranslate.app
 
 </details>
 
+### 项目结构
+
+- `Sources/PlainTranslate/App/` — App 入口、偏好设置和界面语言.
+- `Sources/PlainTranslate/Translation/` — 翻译状态、模型、引擎和视图.
+- `Sources/PlainTranslate/Settings/` — 设置窗口、权限状态和设置指南.
+- `Sources/PlainTranslate/Updates/` — 版本检查及对应设置区域.
+- `Sources/PlainTranslate/Platform/` — 共用 macOS 集成和受限 HTTP 传输.
+- `Tests/PlainTranslateTests/` — 按相同功能分类的回归测试；共用 UI 测试工具位于 `Support`.
+
 ### 测试
 
 ```sh

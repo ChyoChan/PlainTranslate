@@ -189,6 +189,15 @@ An existing signing identity can also be selected with `PLAINTRANSLATE_SIGNING_I
 
 </details>
 
+### Project layout
+
+- `Sources/PlainTranslate/App/` — App entry point, preferences and interface language.
+- `Sources/PlainTranslate/Translation/` — Translation state, models, engines and views.
+- `Sources/PlainTranslate/Settings/` — Settings window, permissions status and setup guides.
+- `Sources/PlainTranslate/Updates/` — Release checks and their settings section.
+- `Sources/PlainTranslate/Platform/` — Shared macOS integration and bounded HTTP transport.
+- `Tests/PlainTranslateTests/` — Regression tests grouped by the same features; shared UI fixtures in `Support`.
+
 ### Tests
 
 ```sh

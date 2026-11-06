@@ -799,20 +799,3 @@ final class TranslationService: NSObject, ObservableObject, NSWindowDelegate, AV
 
 struct TranslationUnsupportedPair: Error {}
 struct TranslationUnknownSource: Error {}
-
-enum TranslationWindowPolicy {
-    static func configure(_ panel: NSPanel, for presentation: TranslationPresentation) {
-        let compact = presentation == .compact
-        panel.isFloatingPanel = compact
-        panel.level = compact ? .floating : .normal
-        panel.hidesOnDeactivate = false
-        // Keep the nonactivating style fixed; changing it on a live NSPanel can
-        // leave its WindowServer activation state out of sync with AppKit.
-    }
-}
-
-final class TranslationPanel: NSPanel {
-    override var canBecomeKey: Bool { true }
-    override var canBecomeMain: Bool { !isFloatingPanel }
-    override func cancelOperation(_ sender: Any?) { close() }
-}

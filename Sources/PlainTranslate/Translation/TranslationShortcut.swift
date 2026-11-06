@@ -73,6 +73,27 @@ struct TranslationShortcut: Codable, Equatable {
     }
 }
 
+/// Only timings and app identifiers are retained; never key contents.
+struct TranslationDoubleCopyDetector {
+    static let interval: TimeInterval = 0.7
+    private var firstCopy: (time: TimeInterval, pid: Int32)?
+    private var lastTrigger: TimeInterval = -.infinity
+
+    mutating func observe(isCopy: Bool, isRepeat: Bool, time: TimeInterval, pid: Int32) -> Bool {
+        guard !isRepeat else { return false }
+        guard isCopy else { firstCopy = nil; return false }
+        guard time - lastTrigger > Self.interval else { firstCopy = nil; return false }
+        if let first = firstCopy, first.pid == pid,
+           time >= first.time, time - first.time <= Self.interval {
+            firstCopy = nil
+            lastTrigger = time
+            return true
+        }
+        firstCopy = (time, pid)
+        return false
+    }
+}
+
 final class TranslationGlobalHotKey {
     private var hotKey: EventHotKeyRef?
     private var handler: EventHandlerRef?

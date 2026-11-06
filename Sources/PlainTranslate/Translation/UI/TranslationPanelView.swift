@@ -2,7 +2,6 @@
 // Copyright (C) 2026 Vorssaint
 
 import SwiftUI
-import Translation
 
 @available(macOS 15.0, *)
 struct TranslationPanelView: View {
@@ -10,9 +9,6 @@ struct TranslationPanelView: View {
     @ObservedObject private var l10n = L10n.shared
     private var text: TranslationStrings { TranslationStrings(language: l10n.language) }
     @FocusState private var inputFocused: Bool
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var hoveredSourceLanguage: String?
-    @State private var hoveredTargetLanguage: String?
     private static let resultAnchor = "translationResultStart"
     @AppStorage(DefaultsKey.translationPopupFontSize) private var popupFontSize = TranslationCompactLayout.defaultFontSize
 
@@ -31,7 +27,7 @@ struct TranslationPanelView: View {
             // Keep the runner outside the presentation branches. Expanding the
             // same panel must not cancel an in-flight Apple Translation session.
             if let request = model.request, request.engine == .apple {
-                TranslationTaskRunner(request: request, completion: model.finish)
+                AppleTranslationTask(request: request, completion: model.finish)
                     .id(request.id)
                     .frame(width: 0, height: 0)
                     .accessibilityHidden(true)
@@ -88,7 +84,8 @@ struct TranslationPanelView: View {
                     closeButton
                 }
             }
-            languagePicker(text.to, selection: targetSelection, detectsLanguage: false)
+            TranslationLanguagePicker(title: text.to, selection: targetSelection,
+                                      recent: model.recentTargetLanguages, detectsLanguage: false)
             resultText(compact: true)
                 .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
                 .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(nsColor: .separatorColor)))
@@ -123,7 +120,8 @@ struct TranslationPanelView: View {
             .padding(.vertical, 10)
             Divider()
             HStack(spacing: 16) {
-                languagePicker(text.from, selection: sourceSelection, detectsLanguage: true)
+                TranslationLanguagePicker(title: text.from, selection: sourceSelection,
+                                          recent: model.recentSourceLanguages, detectsLanguage: true)
                 Button { model.swapLanguages() } label: {
                     Image(systemName: "arrow.left.arrow.right")
                 }
@@ -132,7 +130,8 @@ struct TranslationPanelView: View {
                 .accessibilityLabel(text.swap)
                 .help(text.swap)
                 .disabled(model.source == "auto" || model.busy)
-                languagePicker(text.to, selection: targetSelection, detectsLanguage: false)
+                TranslationLanguagePicker(title: text.to, selection: targetSelection,
+                                      recent: model.recentTargetLanguages, detectsLanguage: false)
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 12)
@@ -328,124 +327,6 @@ struct TranslationPanelView: View {
         // Wait for the result and adaptive panel size to finish their layout.
         DispatchQueue.main.async { proxy.scrollTo(Self.resultAnchor, anchor: .top) }
     }
-
-    private func languagePicker(_ title: String, selection: Binding<String>, detectsLanguage: Bool) -> some View {
-        let recent = detectsLanguage ? model.recentSourceLanguages : model.recentTargetLanguages
-        let hovered = detectsLanguage ? hoveredSourceLanguage : hoveredTargetLanguage
-        let selectedLanguage = selection.wrappedValue
-        let tabs = HStack(spacing: 0) {
-            ForEach(recent, id: \.self) { language in
-                languageTab(language, selection: selection, detectsLanguage: detectsLanguage)
-            }
-        }
-        .overlayPreferenceValue(TranslationLanguageBounds.self) { bounds in
-            GeometryReader { coordinates in
-                if let anchor = bounds[selectedLanguage] {
-                    let frame = coordinates[anchor]
-                    // Keep one underline alive while its position and width change.
-                    Rectangle().fill(Color.accentColor)
-                        .frame(width: frame.width, height: 2)
-                        .offset(x: frame.minX, y: frame.maxY - 2)
-                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: frame)
-                }
-            }
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
-        }
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: hovered)
-        let menu = Menu {
-            if detectsLanguage {
-                languageMenuItem("auto", selection: selection)
-                Divider()
-            }
-            ForEach(TranslationLanguageDefaults.languages, id: \.self) { language in
-                languageMenuItem(language, selection: selection)
-            }
-        } label: {
-            Image(systemName: "chevron.down").frame(width: 24, height: 38)
-        }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize()
-        .help(title)
-        .accessibilityLabel(title)
-        .accessibilityValue(languageName(selection.wrappedValue))
-        return ViewThatFits(in: .horizontal) {
-            HStack(spacing: 4) { tabs; menu }
-                .fixedSize(horizontal: true, vertical: false)
-            HStack(spacing: 4) {
-                ScrollView(.horizontal, showsIndicators: false) { tabs }
-                menu
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: 38)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(title)
-        .onDisappear {
-            if detectsLanguage { hoveredSourceLanguage = nil }
-            else { hoveredTargetLanguage = nil }
-        }
-    }
-
-    private func languageTab(_ language: String, selection: Binding<String>, detectsLanguage: Bool) -> some View {
-        let selected = selection.wrappedValue == language
-        let hovered = (detectsLanguage ? hoveredSourceLanguage : hoveredTargetLanguage) == language
-        return Button { selection.wrappedValue = language } label: {
-            HStack(spacing: 0) {
-                Text(languageName(language))
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(selected || hovered ? Color.primary : Color.secondary)
-                    .fixedSize()
-                    .padding(.horizontal, 8)
-                    .frame(height: 38)
-                    .anchorPreference(key: TranslationLanguageBounds.self, value: .bounds) { [language: $0] }
-                    .overlay(alignment: .bottom) {
-                        if hovered && !selected {
-                            Rectangle().fill(Color.secondary)
-                                .frame(height: 2)
-                                .accessibilityHidden(true)
-                        }
-                    }
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .background(hovered ? Color.primary.opacity(0.04) : .clear)
-        .onHover { inside in
-            if detectsLanguage {
-                if inside { hoveredSourceLanguage = language }
-                else if hoveredSourceLanguage == language { hoveredSourceLanguage = nil }
-            } else {
-                if inside { hoveredTargetLanguage = language }
-                else if hoveredTargetLanguage == language { hoveredTargetLanguage = nil }
-            }
-        }
-        .accessibilityAddTraits(selected ? .isSelected : [])
-        .accessibilityIdentifier("\(detectsLanguage ? "source" : "target")Language-\(language)")
-    }
-
-    private func languageMenuItem(_ language: String, selection: Binding<String>) -> some View {
-        Button { selection.wrappedValue = language } label: {
-            if selection.wrappedValue == language {
-                Label(languageName(language), systemImage: "checkmark")
-            } else {
-                Text(languageName(language))
-            }
-        }
-    }
-
-    private func languageName(_ identifier: String) -> String {
-        identifier == "auto" ? text.auto :
-            (Locale(identifier: l10n.language.rawValue).localizedString(forIdentifier: identifier) ?? identifier)
-    }
-}
-
-private struct TranslationLanguageBounds: PreferenceKey {
-    static let defaultValue: [String: Anchor<CGRect>] = [:]
-    static func reduce(value: inout [String: Anchor<CGRect>], nextValue: () -> [String: Anchor<CGRect>]) {
-        value.merge(nextValue(), uniquingKeysWith: { _, next in next })
-    }
 }
 
 private struct TranslationToolbarButtonStyle: ButtonStyle {
@@ -477,50 +358,5 @@ private struct TranslationResultHeight: PreferenceKey {
     static let defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
-    }
-}
-
-/// Recreated for each immutable request. SwiftUI cancellation and the service's
-/// request ID guard prevent old results replacing newer edits or closed panels.
-@available(macOS 15.0, *)
-private struct TranslationTaskRunner: View {
-    let request: TranslationRequest
-    let completion: (UUID, Result<String, Error>) -> Void
-
-    var body: some View {
-        Color.clear.translationTask(TranslationSession.Configuration(
-            source: request.source.map { Locale.Language(identifier: $0) },
-            target: Locale.Language(identifier: request.target))) { session in
-                do {
-                    if let source = request.source {
-                        let status = await LanguageAvailability().status(
-                            from: Locale.Language(identifier: source),
-                            to: Locale.Language(identifier: request.target))
-                        guard status != .unsupported else { throw TranslationUnsupportedPair() }
-                    }
-                    try Task.checkCancellation()
-                    // translate() owns detection and any download consent UI.
-                    // prepareTranslation() with source=nil always throws
-                    // unableToIdentifyLanguage, even with installed languages.
-                    let translated = try await TranslationTextPlan.translate(request.text) { text in
-                        let response = try await session.translate(text)
-                        return response.targetText
-                    }
-                    try Task.checkCancellation()
-                    await MainActor.run { completion(request.id, .success(translated)) }
-                } catch {
-                    let failure: Error
-                    switch error {
-                    case TranslationError.unsupportedSourceLanguage,
-                         TranslationError.unsupportedTargetLanguage,
-                         TranslationError.unsupportedLanguagePairing:
-                        failure = TranslationUnsupportedPair()
-                    case TranslationError.unableToIdentifyLanguage:
-                        failure = TranslationUnknownSource()
-                    default: failure = error
-                    }
-                    await MainActor.run { completion(request.id, .failure(failure)) }
-                }
-            }
     }
 }

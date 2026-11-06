@@ -189,6 +189,15 @@ open /Applications/PlainTranslate.app
 
 </details>
 
+### プロジェクト構成
+
+- `Sources/PlainTranslate/App/` — アプリの起動、環境設定、表示言語.
+- `Sources/PlainTranslate/Translation/` — 翻訳の状態、モデル、エンジン、ビュー.
+- `Sources/PlainTranslate/Settings/` — 設定ウィンドウ、権限の状態、セットアップガイド.
+- `Sources/PlainTranslate/Updates/` — 更新の確認と対応する設定セクション.
+- `Sources/PlainTranslate/Platform/` — 共通の macOS 連携とサイズ制限付き HTTP 通信.
+- `Tests/PlainTranslateTests/` — 同じ機能別に分類した回帰テスト。共通 UI テスト用コードは `Support`.
+
 ### テスト
 
 ```sh
